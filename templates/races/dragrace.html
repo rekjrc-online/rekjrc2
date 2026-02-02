@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/dragrace.html -->
+
+<div class="panel" style="text-align: center;">
+    <h3>Run Drag Race</h3>
+</div>
+
+<div class="panel">
+    <center>
+        <form method="post" id="drag-race-form">
+            {% csrf_token %}
+            <table cellpadding="5" cellspacing="0" align="center">
+                <thead>
+                    <tr>
+                        <td>Round</th>
+                        <td>Racers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for round in rounds %}
+                        <tr>
+                            <td class="text-center">{{ round.round_number }}</td>
+                            <td>
+                                {% if round.winner %}
+                                    <div class="btn-wrapper my-1">
+                                        <button type="button" class="winner-btn btn btn-success active">
+                                            {% if round.winner == round.model1 %}
+                                                {{ round.model1.driver }} -
+                                                {{ round.model1.build }}
+                                            {% else %}
+                                                {{ round.model2.driver }} -
+                                                {{ round.model2.build }}
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    {% if round.model1 %}
+                                        <div class="btn-wrapper my-1">
+                                            <button type="button" class="winner-btn btn btn-outline-primary {% if round.winner == round.model1 %}active{% endif %}"
+                                                    data-round-id="{{ round.id }}" 
+                                                    data-model-id="{{ round.model1.id }}">
+                                                {{ round.model1.driver }} -
+                                                {{ round.model1.build }}
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        -bye-
+                                    {% endif %}
+                                    {% if round.model2 %}
+                                        <div class="btn-wrapper my-1">
+                                            <button type="button" class="winner-btn btn btn-outline-primary {% if round.winner == round.model2 %}active{% endif %}"
+                                                    data-round-id="{{ round.id }}" 
+                                                    data-model-id="{{ round.model2.id }}">
+                                                {{ round.model2.driver }} -
+                                                {{ round.model2.build }}
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        -bye-
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <input type="hidden" name="winner_{{ round.id }}" id="winner_{{ round.id }}"
+                                value="{% if round.winner %}{{ round.winner.id }}{% endif %}">
+                        </tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not final_winner %}
+                <div class="mt-3">
+                    <button type="submit" class="submit-btn btn btn-primary">
+                        Save Winners
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+        {% if final_winner %}
+            <form method="post" action="{% url 'dragrace:finish' race.uuid %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                    Complete Race & Post Result
+                </button>
+            </form>
+        {% endif %}
+    </center>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('.winner-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const roundId = btn.dataset.roundId;
+                const modelId = btn.dataset.modelId;
+                document.getElementById(`winner_${roundId}`).value = modelId;
+                document.querySelectorAll(`.winner-btn[data-round-id='${roundId}']`)
+                        .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    });
+</script>
+
+{% endblock %}

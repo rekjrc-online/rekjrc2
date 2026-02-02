@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    {% if parent_post %}
+        <h3>Reply to Post</h3>
+        <div class="reply" onclick="window.location.href='/posts/{{ parent_post.uuid }}/';">
+            <u>
+                <strong>{{ parent_post.author }}</strong>
+                <font size="-1">{{ parent_post.insertdate|date:"m/d/y h:iA" }}</font>
+            </u><br/>
+            <div style="padding-left: 10px;">
+                {{ parent_post.display_content|safe|linebreaksbr }}
+            </div>
+            {% if parent_post.image %}
+                <img src="{{ parent_post.image.url }}" alt="Post image" style="max-width: 100%; height: auto;"/>
+            {% endif %}
+        </div>
+    {% else %}
+        <h3>Create New Post</h3>
+    {% endif %}
+
+    {% if not user.is_authenticated %}
+        <p class="text-danger">
+            Your account is not verified. You must verify your account before you can post/reply.
+        </p>
+        <a href="/accounts/">Verify your account</a>
+
+    {% elif user_owned %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Author Dropdown -->
+            <div class="form-group">
+                <label for="{{ form.author_choice.id_for_label }}">Post as</label>
+                {{ form.author_choice }}
+            </div>
+
+            <!-- Content with inline 200-char counter -->
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}">Content</label>
+                {{ form.content }}
+                <div style="text-align: right; font-size: 0.8em; color: #666;">
+                    <span id="char-count">200</span> characters remaining
+                </div>
+            </div>
+
+
+            <!-- Image Upload -->
+            <div class="form-group">
+                <label for="{{ form.image.id_for_label }}">Image</label>
+                {{ form.image }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                {% if parent_post %}Reply{% else %}Post{% endif %}
+            </button>
+        </form>
+    {% else %}
+        <p>
+            You don't own any active profiles, teams, or other postable objects yet.<br/><br/>
+            Create one first.
+        </p>
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    // Character count for content textarea
+    const textarea = document.getElementById('{{ form.content.id_for_label }}');
+    const counter = document.getElementById('char-count');
+    const maxLength = 200;
+
+    if (textarea && counter) {
+        textarea.setAttribute('maxlength', maxLength);
+
+        textarea.addEventListener('input', function() {
+            counter.textContent = maxLength - textarea.value.length + '';
+        });
+
+        counter.textContent = maxLength - (textarea.value?.length || 0) + '';
+    }
+
+    // Cookie for author dropdown
+    const authorSelect = document.getElementById('{{ form.author_choice.id_for_label }}');
+    if (authorSelect) {
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days*24*60*60*1000));
+            document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + expires.toUTCString() + ";path=/";
+        }
+
+        function getCookie(name) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                let [key, value] = cookie.trim().split('=');
+                if (key === name) return decodeURIComponent(value);
+            }
+            return null;
+        }
+
+        authorSelect.addEventListener('change', function () {
+            setCookie("selectedAuthor", this.value, 30);
+        });
+
+        const saved = getCookie("selectedAuthor");
+        if (saved) authorSelect.value = saved;
+    }
+})();
+</script>
+
+{% endblock %}

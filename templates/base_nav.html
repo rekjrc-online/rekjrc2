@@ -1,0 +1,24 @@
+<div class="panel">
+    <center><h1>RekjRC Online</h1></center>
+</div>
+<nav class="top-nav text-center">
+    | <a href="{% url 'homepage' %}">Home</a> |
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'accounts:account' %}">Account</a> |
+        <a href="{% url 'accounts:logout' %}">Logout</a> |
+        <a href="{% url 'posts:create' %}">New Post</a> |
+        <br />|
+        <a href="/builds/">Builds</a> |
+        <a href="/drivers/">Drivers</a> |
+        <a href="/locations/">Locations</a> |
+        <a href="/tracks/">Tracks</a> |
+        <br />|
+        <a href="/clubs/">Clubs</a> |
+        <a href="/events/">Events</a> |
+        <a href="/races/">Races</a> |
+        <a href="/stores/">Stores</a> |
+        <a href="/teams/">Teams</a> |
+    {% else %}
+        <a href="{% url 'accounts:login' %}">Login</a>
+    {% endif %}
+</nav>

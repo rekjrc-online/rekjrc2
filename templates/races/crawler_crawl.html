@@ -1,0 +1,323 @@
+<!-- race_crawler_run.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RekjRC Online - Run {{ racedriver.driver }} ({{ racedriver.build }})</title>
+    <link rel="icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="/static/colors-dark.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/nav.css" />
+    <link rel="stylesheet" href="/static/crawler.css" />
+</head>
+<body>
+
+<center>
+<h2>Driver: {{ racedriver.driver }}<br />{{ racedriver.build }}</h2>
+
+<div class="timers">
+    <div>
+        <div class="lcd-display" id="pointsDisplay">0</div>
+        <small>Penalty Points</small>
+    </div>
+    <div>
+        <div class="lcd-display" id="elapsedDisplay">00:00.00</div>
+        <small>Elapsed Time</small>
+    </div>
+</div>
+<br />
+<form method="post" id="runForm" action="{% url 'crawler:crawl' race_uuid=race.uuid racedriver_uuid=racedriver.uuid %}">
+    {% csrf_token %}
+    <input type="hidden" id="elapsed_time" name="elapsed_time" value="{{ run.elapsed_time|default:"0" }}">
+    <input type="hidden" id="penalty_points" name="penalty_points" value="{{ run.penalty_points|default:"0" }}">
+    <input type="hidden" id="runLog" name="run_log">
+
+    <!-- Row 1: Start/Pause + Finish/Reset -->
+    <div class="button-row">
+        <button type="button" id="startStopBtn" style="background-color: red; color: white;">Start</button>
+        <button type="button" id="finishResetBtn" style="background-color: green; color: white;">Finish</button>
+    </div>
+
+    <!-- Row 2: +1, +5, +10 -->
+    <div class="button-row">
+        <button type="button" id="add1">+1</button>
+        <button type="button" id="add5">+5</button>
+        <button type="button" id="add10">+10</button>
+    </div>
+
+    <!-- Row 3: Gate buttons -->
+    <div class="button-row">
+        <button type="button" id="gate0Btn" style="background-color: purple; color: white;">Gate</button>
+        <button type="button" id="gate2Btn" style="background-color: purple; color: white;">-2</button>
+        <button type="button" id="gate10Btn" style="background-color: purple; color: white;">-10</button>
+    </div>
+
+    <!-- Row 4: Undo -->
+    <div class="button-row">
+        <button type="button" id="undoBtn" style="background-color: orange; color: white;">Undo</button>
+    </div>
+
+    <!-- Row 5: Submit (hidden until finish) -->
+    <div class="button-row">
+        <button type="submit" id="submitBtn" disabled>Submit</button>
+    </div>
+</form>
+
+<!-- Penalty log -->
+<div id="penaltyLog">
+    <table align="center" cellpadding="0" cellspacing="0"><tr><td>
+        <div id="penaltyList" style="text-align:left;"></div>
+    </td></tr></table>
+</div>
+</center>
+
+<script>
+let startTime = 0;
+let elapsed = parseFloat(document.getElementById('elapsed_time').value) || 0;
+let points = parseInt(document.getElementById('penalty_points').value) || 0;
+let running = false;
+let interval;
+
+const elapsedDisplay = document.getElementById('elapsedDisplay');
+const pointsDisplay = document.getElementById('pointsDisplay');
+
+const startStopBtn = document.getElementById('startStopBtn');
+const finishResetBtn = document.getElementById('finishResetBtn');
+const add1Btn = document.getElementById('add1');
+const add5Btn = document.getElementById('add5');
+const add10Btn = document.getElementById('add10');
+const gate0Btn = document.getElementById('gate0Btn');
+const gate2Btn = document.getElementById('gate2Btn');
+const gate10Btn = document.getElementById('gate10Btn');
+const undoBtn = document.getElementById('undoBtn');
+const submitBtn = document.getElementById('submitBtn');
+
+const elapsedInput = document.getElementById('elapsed_time');
+const pointsInput = document.getElementById('penalty_points');
+
+let penaltyHistory = [];
+let finished = false;
+
+const penaltyLogDiv = document.getElementById('penaltyLog');
+
+penaltyLogDiv.title = 'Click to copy log';
+
+penaltyLogDiv.addEventListener('click', () => {
+    if (penaltyHistory.length === 0) return;
+
+    // Copy log in chronological order
+    const logText = penaltyHistory
+        .map(entry => `${entry.label} (${entry.delta >= 0 ? '+' : ''}${entry.delta})`)
+        .join('\n');
+
+    navigator.clipboard.writeText(logText).then(() => {
+        showCopiedTooltip();
+    }).catch(err => {
+        console.error('Failed to copy log:', err);
+    });
+});
+
+function showCopiedTooltip() {
+    let tooltip = document.createElement('div');
+    tooltip.textContent = 'Copied!';
+    tooltip.style.position = 'absolute';
+    tooltip.style.background = '#39ff14';
+    tooltip.style.color = '#000';
+    tooltip.style.padding = '0.25rem 0.5rem';
+    tooltip.style.borderRadius = '0.25rem';
+    tooltip.style.fontWeight = 'bold';
+    tooltip.style.zIndex = 1000;
+
+    // position tooltip near the penalty log
+    const rect = penaltyLogDiv.getBoundingClientRect();
+    tooltip.style.top = `${rect.top - 30 + window.scrollY}px`;
+    tooltip.style.left = `${rect.left + rect.width/2 - 30 + window.scrollX}px`;
+
+    document.body.appendChild(tooltip);
+
+    setTimeout(() => {
+        tooltip.remove();
+    }, 1000);
+}
+
+function serializeLog() {
+    document.getElementById('runLog').value = JSON.stringify(
+        penaltyHistory.map(entry => ({
+            milliseconds: entry.milliseconds,
+            label: entry.label,
+            delta: entry.delta
+        }))
+    );
+}
+
+function formatTime(sec) {
+    const minutes = Math.floor(sec / 60);
+    const seconds = Math.floor(sec % 60);
+    const hundredths = Math.floor((sec % 1) * 100);
+    return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+}
+
+function updateDisplays() {
+    const now = running ? (Date.now() - startTime)/1000 + elapsed : elapsed;
+    elapsedDisplay.textContent = formatTime(now);
+    pointsDisplay.textContent = points;
+    elapsedInput.value = now.toFixed(2);
+    pointsInput.value = points;
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1;
+        utter.pitch = 1;
+        window.speechSynthesis.speak(utter);
+    }
+}
+
+function addPenalty(label, delta) {
+    const now = running ? (Date.now() - startTime)/1000 + elapsed : elapsed;
+    const timestamp = formatTime(now);
+    const logLabel = `[${timestamp}] ${label}`;
+
+    // Calculate milliseconds offset from 0
+    let ms = 0;
+    if (penaltyHistory.length > 0) {
+        // use the actual elapsed since start for subsequent entries
+        ms = Math.floor(((running ? Date.now() - startTime : 0)/1000 + elapsed) * 1000);
+    }
+
+    points += delta;
+    penaltyHistory.push({ label: logLabel, delta, milliseconds: ms });
+    updateDisplays();
+    renderPenaltyLog();
+}
+
+function undoPenalty() {
+    if (penaltyHistory.length === 0) return;
+    const last = penaltyHistory.pop();
+    points -= last.delta;
+    speak('Undo');
+    renderPenaltyLog();
+    updateDisplays();
+}
+
+function renderPenaltyLog() {
+    document.getElementById('penaltyList').innerHTML =
+        penaltyHistory.slice().reverse().map(p =>
+            `<div>${p.label}</div>`
+        ).join('');
+}
+
+// Start/Pause
+startStopBtn.addEventListener('click', () => {
+    if (!running) {
+        speak('Start');
+        running = true;
+        startTime = Date.now();
+        interval = setInterval(updateDisplays, 50);
+        startStopBtn.textContent = 'Pause';
+        addPenalty('Start', 0);
+    } else {
+        speak('Pause');
+        running = false;
+        clearInterval(interval);
+        elapsed += (Date.now() - startTime) / 1000;
+        startStopBtn.textContent = 'Start';
+        updateDisplays();
+        addPenalty('Start', 0);
+    }
+});
+
+// +1, +5, +10
+add1Btn.addEventListener('click', () => { speak('+1'); addPenalty('+1', 1); });
+add5Btn.addEventListener('click', () => { speak('+5'); addPenalty('+5', 5); });
+add10Btn.addEventListener('click', () => { speak('+10'); addPenalty('+10', 10); });
+
+// Gate buttons
+gate0Btn.addEventListener('click', () => { speak('Gate'); addPenalty('Gate', 0); });
+gate2Btn.addEventListener('click', () => { speak('Clean Gate'); addPenalty('-2', -2); });
+gate10Btn.addEventListener('click', () => { speak('Bonus Gate'); addPenalty('-10', -10); });
+
+// Undo
+undoBtn.addEventListener('click', undoPenalty);
+
+// Finish / Reset
+finishResetBtn.addEventListener('click', () => {
+    if (!finished) {
+        if (running) {
+            elapsed += (Date.now() - startTime)/1000;
+            running = false;
+            clearInterval(interval);
+        }
+        addPenalty('Finished', 0);
+        disableControls();
+        serializeLog();
+        submitBtn.disabled = false;
+        updateDisplays();
+        speakFinalScore(elapsed, points);
+
+        // toggle to Reset
+        finishResetBtn.textContent = 'Reset';
+        finishResetBtn.style.backgroundColor = 'blue';
+        finished = true;
+    } else {
+        // Reset
+        speak('Reset');
+        elapsed = 0;
+        points = 0;
+        penaltyHistory = [];
+        running = false;
+        clearInterval(interval);
+        startStopBtn.textContent = 'Start';
+        finishResetBtn.textContent = 'Finish';
+        finishResetBtn.style.backgroundColor = 'green';
+        finished = false;
+        enableControls();
+        updateDisplays();
+        renderPenaltyLog();
+    }
+});
+
+function speakFinalScore(elapsedSeconds, points) {
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = Math.floor(elapsedSeconds % 60);
+    const hundredths = Math.floor((elapsedSeconds % 1) * 100);
+    const hundredthsDigits = hundredths.toString().padStart(2,'0').split('').join(' ');
+    const timeStr = `Time ${minutes} minute${minutes!==1?'s':''} ` +
+                    `${seconds} second${seconds!==1?'s':''} point ${hundredthsDigits}`;
+    const pointsStr = `Point${points!==1?'s':''} ${points}`;
+    speak(`Finished - ${pointsStr} - ${timeStr}`);
+}
+
+function disableControls() {
+    startStopBtn.disabled = true;
+    add1Btn.disabled = true;
+    add5Btn.disabled = true;
+    add10Btn.disabled = true;
+    gate0Btn.disabled = true;
+    gate2Btn.disabled = true;
+    gate10Btn.disabled = true;
+    undoBtn.disabled = true;
+    finishResetBtn.disabled = false;
+}
+
+function enableControls() {
+    startStopBtn.disabled = false;
+    add1Btn.disabled = false;
+    add5Btn.disabled = false;
+    add10Btn.disabled = false;
+    gate0Btn.disabled = false;
+    gate2Btn.disabled = false;
+    gate10Btn.disabled = false;
+    undoBtn.disabled = false;
+    finishResetBtn.disabled = false;
+    submitBtn.disabled = true;
+}
+
+updateDisplays();
+</script>
+
+</body>
+</html>

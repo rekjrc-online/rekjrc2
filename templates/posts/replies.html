@@ -1,0 +1,27 @@
+<!-- posts/replies.html -->
+<div class="panel"><h4>Replies</h4></div>
+<div id="replies-container">
+    {% for post in replies %}
+        {% include "posts/post.html" %}
+    {% endfor %}
+</div>
+<div id="loading">
+    {% if replies.has_next %}
+        Scroll for more...
+    {% else %}
+        No replies yet.
+    {% endif %}
+</div>
+<div id="end-message">
+    <br /><br /><br /><br />
+</div>
+<script>
+window.SCROLL_CONFIG = {
+    feedId: 'replies-container',
+    loadingId: 'loading',
+    endMessageId: 'end-message',
+    startPage: {{ replies.number|default:2 }},
+    fetchUrl: "{% url 'posts:ajax_replies' post.uuid %}"
+};
+</script>
+<script src="/static/scroll_replies.js"></script>

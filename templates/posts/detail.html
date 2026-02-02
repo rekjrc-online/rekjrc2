@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- posts/detail.html -->
+
+<script src="/static/likes.js"></script>
+
+<div class="post">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr valign="top">
+      <td style="width: 45px;">
+        {% if post.author.avatar %}
+          <img src="{{ post.author.avatar.url }}" alt="{{ post.author.display_name }}" class="avatar" />
+        {% else %}
+          <img src="/static/nophoto_{{ post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+        {% endif %}
+      </td>
+      <td>
+        <strong>
+          <a href="/{{ post.author_content_type.model }}s/{{ post.author.uuid }}/">
+            {{ post.author_content_type.name|title }} -
+            <span style="color: var(--text-link-hover)"> {{ post.author.display_name }} </span>
+          </a>
+          <span>- {{ post.posted_date_delta }}</span>
+        </strong>
+        <p>{{ post.display_content|safe|linebreaksbr }}</p>
+        {% if post.image %}
+          <a target="_blank" href="{{ post.image.url }}">
+            <img src="{{ post.image.url }}" alt="Post image" />
+          </a>
+        {% endif %}
+        {% if post.author_content_type.model == "race" %}
+          {% if not post.author.race_finished and not post.author.entry_locked %}
+            <a href="{% url 'races:detail' post.author.uuid %}">Join Race</a>
+          {% endif %}
+        {% endif %}
+        {% include "posts/metrics.html" %}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        {% if parent_post %}
+          <div class="reply" onclick="window.location.href='/posts/{{ parent_post.uuid }}/';">
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="width: 45px;">
+                  {% if parent_post.author.avatar %}
+                    <img src="{{ parent_post.author.avatar.url }}" alt="{{ parent_post.author.display_name }}" class="avatar" />
+                  {% else %}
+                    <img src="/static/nophoto_{{ parent_post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+                  {% endif %}
+                </td>
+                <td>
+                  <u>
+                    <strong>{{ parent_post.author }}</strong>
+                    <font size="-1">{{ parent_post.insertdate|date:"m/d/y h:iA" }}</font>
+                  </u><br/>
+                  <div style="padding-left: 10px;">
+                    {{ parent_post.display_content|safe|linebreaksbr }}
+                  </div>
+                  {% if parent_post.image %}
+                    <img src="{{ parent_post.image.url }}" alt="Post image" style="max-width: 100%; height: auto;"/>
+                  {% endif %}
+                  {% include "posts/metrics.html" with post=parent_post %}
+                </td>
+              </tr>
+            </table>
+          </div>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+{% if replies %}
+  {% include "posts/replies.html" %}
+{% endif %}
+{% endblock %}

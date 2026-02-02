@@ -1,0 +1,49 @@
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from races.models import Race, RaceDriver
+from topspeed.models import TopSpeedRun
+from topspeed.forms import TopSpeedRunForm
+
+User = get_user_model()
+
+class TopSpeedRunTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="driver", password="pass")
+        self.race = Race.objects.create(display_name="TopSpeed Test Race", owner=self.user)
+        self.racedriver = RaceDriver.objects.create(
+            race=self.race,
+            user=self.user,
+            driver_name="Speedy Driver",
+            model_name="RC Car 1"
+        )
+
+    def test_topspeedrun_str_with_value(self):
+        run = TopSpeedRun.objects.create(
+            race=self.race,
+            racedriver=self.racedriver,
+            topspeed=42
+        )
+        self.assertEqual(str(run), f"{self.racedriver} - 42mph")
+
+    def test_topspeedrun_str_without_value(self):
+        run = TopSpeedRun.objects.create(
+            race=self.race,
+            racedriver=self.racedriver
+        )
+        self.assertEqual(str(run), f"{self.racedriver} - No top speed recorded")
+
+    def test_topspeedrun_form_valid(self):
+        form_data = {'race': self.race.pk, 'racedriver': self.racedriver.pk, 'topspeed': 55}
+        form = TopSpeedRunForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        run = form.save()
+        self.assertEqual(run.topspeed, 55)
+        self.assertEqual(run.race, self.race)
+        self.assertEqual(run.racedriver, self.racedriver)
+
+    def test_topspeedrun_form_blank_topspeed(self):
+        form_data = {'race': self.race.pk, 'racedriver': self.racedriver.pk, 'topspeed': ''}
+        form = TopSpeedRunForm(data=form_data)
+        self.assertTrue(form.is_valid())
+        run = form.save()
+        self.assertIsNone(run.topspeed)

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <center><h3>Advanced – {{ object.display_name }}</h3></center>
+</div>
+
+<div class ="panel">
+    <h4>Clubs </h4>
+    {% for cc in object.event_clubs.all %}
+        <div>
+            {{ cc.club }} -
+            <a href="{% url 'events:club-remove' object.uuid cc.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No clubs</em> -
+    {% endfor %}
+    <a href="{% url 'events:club-add' object.uuid %}" class="button">Add club</a>
+</div>
+
+<div class="panel">
+    <h4>Locations</h4>
+    {% for cl in object.event_locations.all %}
+        <div>
+            {{ cl.location }} -
+            <a href="{% url 'events:location-remove' object.uuid cl.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No locations</em> -
+    {% endfor %}
+    <div>
+        <a href="{% url 'events:location-add' object.uuid %}" class="button">Add location</a>
+    </div>
+</div>
+
+<div class="panel">
+    <h4>Races</h4>
+    {% for cr in object.event_races.all %}
+        <div>
+            {{ cr.race }} -
+            <a href="{% url 'events:race-remove' object.uuid cr.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No races</em> -
+    {% endfor %}
+    <a href="{% url 'events:race-add' object.uuid %}" class="button">Add race</a>
+</div>
+
+<div class="panel">
+    <h4>Stores </h4>
+    {% for cs in object.event_stores.all %}
+        <div>
+            {{ cs.store }} -
+            <a href="{% url 'events:store-remove' object.uuid cs.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No stores</em> -
+    {% endfor %}
+    <a href="{% url 'events:store-add' object.uuid %}" class="button">Add store</a>
+</div>
+
+<div class="panel">
+    <h4>Teams </h4>
+    {% for ct in object.event_teams.all %}
+        <div>
+            {{ ct.team }} -
+            <a href="{% url 'events:team-remove' object.uuid ct.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No teams</em> -
+    {% endfor %}
+    <a href="{% url 'events:team-add' object.uuid %}" class="button">Add team</a>
+</div>
+
+{% endblock %}

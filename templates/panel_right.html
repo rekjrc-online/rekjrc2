@@ -1,0 +1,16 @@
+<div class="right-inner">
+    <h6 class="text-center fw-bold mb-3">Visit Our Friends</h6>
+    {% if sponsors_list %}
+    <div class="d-flex flex-column gap-3">
+        {% for sponsor in sponsors_list %}
+            <div class="card">
+                <a href="{{ sponsor.website }}?source=rekjrc" target="_blank" onclick="recordSponsorClick('{{ sponsor.id }}', '{{ sponsor.website }}'); return false;">
+                    <img src="{{ sponsor.image.url }}" class="card-img-top img-fluid rounded" alt="{{ sponsor.name }}">
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="text-center text-muted">No sponsors yet</div>
+    {% endif %}
+</div>

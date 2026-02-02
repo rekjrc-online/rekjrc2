@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+{% load race_filters %}
+<!-- crud/detail.html -->
+
+<div class="panel">
+  <h3>
+    {% if object.avatar %}
+      <img src="{{ object.avatar.url }}" alt="{{ object.display_name }}" class="menu-avatar-large"/>
+    {% else %}
+      <img src="/static/nophoto_{{ model_name|upper }}.png" alt="{{ object.display_name }}" class="menu-avatar-large"/>
+    {% endif %}
+    {{ object }}
+  </h3>
+</div>
+
+{% if model_name == "race" %}
+  <div class="panel">
+    {% if is_owner %}
+      {% if object.race_finished %}
+        <h2>Race Finished</h2>
+      {% elif racedrivers %}
+        <form method="get" action="{% url 'races:start' object.uuid %}" style="display: inline;">
+          <button type="submit" class="button">Start Race</button>
+        </form><p>
+      {% endif %}
+    {% endif %}
+    {% if not object.race_finished and not object.entry_locked %}
+      <form method="get" action="{% url 'races:join' object.uuid %}" style="display: inline;">
+        <button type="submit" class="button">Enter Race</button>
+      </form>
+    {% endif %}
+    {% if object.enable_chat %}
+      <form method="get" action="{% url 'chat:room' model_name object.uuid %}" style="display: inline;">
+        <button type="submit" class="button">Enter Chat Room</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="panel" style="text-align: center">
+  <table align="center" cellpadding="5" width="100%">
+    {% for label, value in field_values %}
+      {% if value and label != "is active" and label != "avatar" %}
+        <tr>
+          <td align="left"><strong>{{ label|title }}</strong></td>
+          <td align="left">
+            {% if value.0 and value.0.0 and value.0.1 %}
+              {# foreign key list #}
+              <table cellpadding="3">
+                {% for sub_label, sub_value in value %}
+                  {% if sub_value %}
+                    <tr>
+                      <td align="left">{{ sub_label|title }}</td>
+                      <td align="left">{{ sub_value }}</td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </table>
+            {% else %}
+              {{ value }}
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+    <tr>
+      <td align="left"><strong>Is Active</strong></td>
+      <td align="left">{{ object.is_active }}</td>
+    </tr>
+    {% if is_owner %}
+      <tr>
+        <td colspan="2" align="left">
+          <hr />
+          Owner functions:
+          <a href="edit" class="button">Edit</a>,
+          {% if object.has_advanced %}
+            <a href="delete" class="button button-danger">Delete</a>,
+            <a href="advanced" class="button">Advanced</a>
+          {% else %}
+            <a href="delete" class="button button-danger">Delete</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% endif %}
+  </table>
+</div>
+
+{% if model_name == "race" %}
+  <div class="panel">
+    <h4>Race Entries</h4>
+    <ul>
+      {% for racedriver in racedrivers %}
+        <li>
+          {% if racedriver.transponder %}
+            #{{ racedriver.transponder }} -
+          {% endif %}
+          {{ racedriver.driver }}
+          ({{ racedriver.build }})
+        </li>
+      {% empty %}
+        <li>No drivers have joined
+      {% endfor %}
+    </ul>
+  </div>
+
+{% endif %}
+
+{% endblock %}

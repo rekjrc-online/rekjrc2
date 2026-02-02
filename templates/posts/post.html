@@ -1,0 +1,43 @@
+<!-- posts/post.html -->
+<div class="post bgmouse" onclick="window.location.href='/posts/{{ post.uuid }}/';">
+  <div class="d-flex align-items-start mb-1 gap-2">
+    <!-- Avatar -->
+    {% if post.author.avatar %}
+      <a target="_blank" href="{{ post.author.avatar.url }}">
+        <img src="{{ post.author.avatar.url }}" alt="{{ post.author.display_name }}" class="avatar" />
+      </a>
+    {% else %}
+      <img src="/static/nophoto_{{ post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+    {% endif %}
+
+    <div class="post-right-content" style="flex: 1">
+      <div class="d-flex align-items-center gap-1 mb-1">
+        <a href="/{{ post.author_content_type.model }}s/{{ post.author.uuid }}/">
+          {{ post.author_content_type.name|title }} -
+          <span style="color: var(--text-link-hover)"> {{ post.author.display_name }} </span>
+        </a>
+        <span>- {{ post.posted_date_delta }}</span>
+      </div>
+
+      <!-- Post body -->
+      <p class="mb-1">{{ post.display_content|safe|linebreaksbr }}</p>
+
+      <!-- Image -->
+      {% if post.image %}
+      <a target="_blank" href="{{ post.image.url }}">
+        <img src="{{ post.image.url }}" alt="Post image" />
+      </a>
+      {% endif %}
+
+      <!-- YouTube -->
+      {% if post.youtube_id %}
+      <p>
+        <a href="{{ post.video_url }}" target="_blank">Watch Video</a>
+      </p>
+      {% endif %}
+
+      <!-- Metrics -->
+      <div class="metrics" data-post-id="{{ post.uuid }}">{% include "posts/metrics.html" %}</div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ channel }} Chat</title>
+
+<style>
+:root {
+    --bg-body: #121212;
+    --bg-post: #1b1b1b;
+    --bg-post-hover: #262626;
+    --text-body: #e0e0e0;
+    --text-muted: #aaa;
+    --text-link-hover: #6fb8ff;
+    --border-post: #27415a;
+    --border-post-hover: #6fb8ff;
+    --radius: 8px;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg-body);
+    color: var(--text-body);
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    background: var(--bg-post);
+    border-bottom: 1px solid var(--border-post);
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    color: var(--text-link-hover);
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.msg {
+    max-width: 90%;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    line-height: 1.4rem;
+}
+
+.msg.you {
+    background: var(--bg-post);
+    border: 1px solid var(--border-post);
+    margin-left: auto;
+}
+
+.msg.them {
+    background: var(--bg-post-hover);
+    border: 1px solid var(--border-post-hover);
+    margin-right: auto;
+}
+
+.msg-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.input-area {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-post);
+    border-top: 1px solid var(--border-post);
+    padding: 12px;
+}
+
+.input-area input {
+    flex: 1 1 auto;
+    background: var(--bg-post-hover);
+    border: 1px solid var(--border-post);
+    border-radius: var(--radius);
+    padding: 12px;
+    color: var(--text-body);
+    font-size: 16px;
+}
+
+.input-area button {
+    background: var(--text-link-hover);
+    border: none;
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-weight: bold;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="chat-header">
+    {{ channel }} — Chat
+</div>
+
+<!-- EMPTY: messages are loaded via polling -->
+<div id="messages" class="messages"></div>
+
+<div class="input-area">
+    <input id="chatInput" type="text" placeholder="Type a message…" autocomplete="off">
+    <button id="sendBtn">Send</button>
+</div>
+
+<script>
+let lastTimestamp = null;
+
+function renderMessage(m) {
+    const div = document.createElement("div");
+    div.classList.add("msg");
+    div.classList.add(m.is_you ? "you" : "them");
+
+    div.innerHTML = `
+        <div class="msg-header">
+            <strong>${m.username}</strong>
+            <span>· ${new Date(m.created_at).toLocaleTimeString([], {
+                hour: 'numeric',
+                minute: '2-digit'
+            })}</span>
+        </div>
+        <div>${m.message}</div>
+    `;
+    return div;
+}
+
+function fetchMessages() {
+    let url = "{% url 'chat:messages' channel_type channel.uuid %}";
+    if (lastTimestamp) {
+        url += `?after=${encodeURIComponent(lastTimestamp)}`;
+    }
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const box = document.getElementById("messages");
+
+            data.forEach(m => {
+                box.appendChild(renderMessage(m));
+                lastTimestamp = m.created_at;
+            });
+
+            if (data.length) {
+                box.scrollTop = box.scrollHeight;
+            }
+        })
+        .catch(err => console.error("fetchMessages failed", err));
+}
+
+setInterval(fetchMessages, 10000);
+fetchMessages();
+
+document.getElementById("sendBtn").onclick = () => {
+    const input = document.getElementById("chatInput");
+    const content = input.value.trim();
+    if (!content) return;
+
+    fetch("{% url 'chat:send' channel_type channel.uuid %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ content }),
+    }).then(() => {
+        input.value = "";
+        fetchMessages();
+    });
+};
+</script>
+
+</body>
+</html>

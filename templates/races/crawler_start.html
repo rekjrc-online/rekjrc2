@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+{% load race_filters %}
+<!-- races/crawler_start.html -->
+
+<div class="panel">
+
+<center>
+    <h3>{{ race }}</h3>
+</center>
+
+<table style="width:100%; text-align:center;" cellpadding="2" cellspacing="2">
+    <tr>
+        {% if not race.race_finished %}
+            <th>Action</th>
+        {% endif %}
+        <th>Driver</th>
+        <th>Model</th>
+        <th>Points</th>
+        <th>Elapsed</th>
+    </tr>
+    {% for d in racedrivers %}
+        <tr>
+            {% if not race.race_finished %}
+                <td>
+                    {% if d.run and d.run.elapsed_time %}
+                        --
+                    {% else %}
+                        <a href="{% url 'crawler:crawl' race_uuid=race.uuid racedriver_uuid=d.uuid %}">
+                            Run
+                        </a>
+                    {% endif %}
+                </td>
+            {% endif %}
+            <td>{{ d.driver }}</td>
+            <td>{{ d.build }}</td>
+            <td>
+                {% if d.run %}
+                    {% if d.run.penalty_points %}
+                        {{ d.run.penalty_points }}
+                    {% else %}
+                        0
+                    {% endif %}
+                {% else %}
+                    --
+                {% endif %}
+            </td>
+            <td>
+                {% if d.run and d.run.elapsed_time %}
+                    {{ d.run.elapsed_time|format_seconds }}
+                {% else %}
+                    --
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5">No drivers signed up yet.</td></tr>
+    {% endfor %}
+</table>
+
+{% if not race.race_finished %}
+    <br />
+    <form method="post" action="{% url 'races:lock' uuid=race.uuid %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">
+            {% if race.entry_locked %}
+                LOCKED - Unlock Entries
+            {% else %}
+                Lock Entries
+            {% endif %}
+        </button>
+    </form>
+{% endif %}
+<br />
+
+{% if not race.race_finished %}
+    <form method="post" action="{% url 'crawler:finish' race_uuid=race.uuid %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">
+            Finish Race
+        </button>
+    </form>
+{% else %}
+    <center><h4>-Race is Finished-</h4></center>
+{% endif %}
+
+</div>
+{% endblock %}

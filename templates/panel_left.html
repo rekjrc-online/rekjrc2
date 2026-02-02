@@ -1,0 +1,90 @@
+<!-- panel_left.html -->
+<div class="left-inner panel-left">
+    <div class="d-flex flex-column gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <span style="width: 20px; display: inline-block;">&#x1F3E0;</span>
+            <a href="{% url 'homepage' %}">Home</a>
+        </div>
+        {% if request.user.is_authenticated %}
+            <div class="d-flex align-items-center gap-2">
+                <span style="width: 20px; display: inline-block;">&#x1F464;</span>
+                <a href="{% url 'accounts:account' %}">Account</a>
+            </div>
+        {% endif %}
+        <div class="d-flex align-items-center gap-2">
+            <span style="width: 20px; display: inline-block;">&#x2753;</span>
+            <a href="{% url 'pages:support' %}">Support</a>
+        </div>
+        {% if request.user.is_authenticated %}
+            {% if request.user.is_staff %}
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 20px; display: inline-block;">&#x2699;</span>
+                    <a href="/admin/" target="_blank">Admin</a>
+                </div>
+            {% endif %}
+            <form id="logoutform" method="post" action="{% url 'accounts:logout' %}" style="display:none;">
+                {% csrf_token %}
+            </form>
+            <div class="d-flex align-items-center gap-2">
+                <span style="width: 20px; display: inline-block;">&#x1F512;</span>
+                <a href="#" onclick="document.getElementById('logoutform').submit(); return false;">Logout</a>
+            </div>
+            <div style="width:120px; text-align:center; padding:5px 10px; border:1px solid white; border-radius: 5px; background-color:var(--text-link-hover);">
+                <a href="{% url 'posts:create' %}" style="color:white;"><b>New&nbsp;Post</b></a>
+            </div>
+        {% endif %}
+    </div>
+    <!-- My Database -->
+    <h6 class="text-uppercase fw-bold mb-2;">My Database</h6>
+    <div class="d-flex flex-column gap-2">
+        {% if request.user.is_authenticated %}
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_MODEL.png" class="menu-avatar">
+                <a href="{% url 'builds:list' %}">Builds</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_DRIVER.png" class="menu-avatar">
+                <a href="{% url 'drivers:list' %}">Drivers</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_LOCATION.png" class="menu-avatar">
+                <a href="{% url 'locations:list' %}">Locations</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_RACE.png" class="menu-avatar">
+                <a href="{% url 'races:list' %}">Races</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_TRACK.png" class="menu-avatar">
+                <a href="{% url 'tracks:list' %}">Tracks</a>
+            </div>
+            <hr style="height: 0px; margin: 0px;">
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_CLUB.png" class="menu-avatar">
+                <a href="{% url 'clubs:list' %}">Clubs</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_EVENT.png" class="menu-avatar">
+                <a href="{% url 'events:list' %}">Events</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_STORE.png" class="menu-avatar">
+                <a href="{% url 'stores:list' %}">Stores</a>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <img src="/static/nophoto_TEAM.png" class="menu-avatar">
+                <a href="{% url 'teams:list' %}">Teams</a>
+            </div>
+        {% else %}
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_MODEL.png" class="menu-avatar">Builds</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_CLUB.png" class="menu-avatar">Clubs</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_DRIVER.png" class="menu-avatar">Drivers</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_EVENT.png" class="menu-avatar">Events</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_LOCATION.png" class="menu-avatar">Locations</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_RACE.png" class="menu-avatar">Races</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_STORE.png" class="menu-avatar">Stores</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_TEAM.png" class="menu-avatar">Teams</div>
+            <div class="d-flex align-items-center gap-2"><img src="/static/nophoto_TRACK.png" class="menu-avatar">Tracks</div>
+        {% endif %}
+    </div>
+</div>

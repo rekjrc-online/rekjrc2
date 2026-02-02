@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- locations/advanced.html -->
+ 
+<div class="panel">
+    <center><h3>Advanced - {{ object.display_name }}</h3></center>
+</div>
+
+<div class ="panel">
+    <h4>Tracks</h4>
+    {% for cc in object.location_tracks.all %}
+        <div>
+            {{ cc.track }} -
+            <a href="{% url 'locations:track-remove' object.uuid cc.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No tracks</em> -
+    {% endfor %}
+    <a href="{% url 'locations:track-add' object.uuid %}" class="button">Add track</a>
+</div>
+
+{% endblock %}

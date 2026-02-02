@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>RekjRC Online</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/favicon.ico">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="layout-container">
+    <!-- Left sidebar -->
+    <div class="left-col">
+        {% include "panel_left.html" %}
+    </div>
+
+    <!-- Middle feed -->
+    <div class="middle-col">
+        {% include "base_nav.html" %}
+        {% block content %}
+        {% endblock %}
+        <br /><br /><br />
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="right-col">
+        {% include "panel_right.html" %}
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

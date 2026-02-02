@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <center><h3>Advanced – {{ object.display_name }}</h3></center>
+</div>
+
+<div class="panel">
+    <h4>Locations</h4>
+    {% for cl in object.locations.all %}
+        <div>
+            {{ cl.location }} -
+            <a href="{% url 'clubs:location-remove' object.uuid cl.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No locations</em> -
+    {% endfor %}
+    <a href="{% url 'clubs:location-add' object.uuid %}" class="button">Add location</a>
+</div>
+
+<div class="panel">
+    <h4>Members</h4>
+    {% for member in object.members.all %}
+        <div>
+            {{ member.user }} -
+            <a href="{% url 'clubs:member-remove' object.uuid member.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No members</em> -
+    {% endfor %}
+    <a href="{% url 'clubs:member-add' object.uuid %}" class="button">Add member</a>
+</div>
+
+<div class="panel">
+    <h4>Teams</h4>
+    {% for ct in object.teams.all %}
+        <div>
+            {{ ct.team }} -
+            <a href="{% url 'clubs:team-remove' object.uuid ct.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No teams</em> -
+    {% endfor %}
+    <a href="{% url 'clubs:team-add' object.uuid %}" class="button">Add team</a>
+</div>
+
+{% endblock %}

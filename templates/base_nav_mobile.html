@@ -1,0 +1,40 @@
+<!-- base_nav_mobile.html -->
+<center><h1>RekjRC Online</h1></center>
+<nav>
+    <select onchange="if(this.value!=''){self.location.href=this.value}"
+        style=" box-sizing: border-box;
+                padding: 3px;
+                border: 1px solid var(--border1);
+                background-color: var(--background4);
+                color: var(--font4);
+                resize: vertical;">
+        <option value="">Welcome to Rekj RC</option>
+        {% if request.user.is_staff %}
+            <option value="/admin/">Admin</option>
+        {% endif %}
+        <option value="">----</option>
+        <option value="/">Home Feed</option>
+        {% if request.user.is_authenticated %}
+            <option value="/posts/create/">New Post</option>
+            <option value="">----</option>
+            <option value="/builds/">Builds</option>
+            <option value="/tracks/">Tracks</option>
+            <option value="/races/">Races</option>
+            {% comment %}
+                <option value="/clubs/">Clubs</option>
+                <option value="/events/">Events</option>
+                <option value="/locations/">Locations</option>
+                <option value="/stores/">Stores</option>
+                <option value="/teams/">Teams</option>
+            {% endcomment %}
+            <option value="">----</option>
+            <option value="/accounts/update/">Account</option>
+            <option value="/profiles/">Profiles</option>
+            <option value="/accounts/logout/">Log Out</option>
+        {% else %}
+            <option value="/accounts/login/">Log In</option>
+            <option value="/accounts/register/">New User</option>
+        {% endif %}
+    </select>
+    Main Menu
+</nav>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel" style="text-align: center">
+  <h3>My {{ model_name_plural|title }}</h3>
+  {% if not object_list %}
+    - No entries -<br />
+  {% endif %}
+  <a href="create">Create New</a>
+</div>
+
+{% if object_list %}
+  {% for team in object_list %}
+    <div class="post bgmouse" onclick="window.location.href='{{ team.get_absolute_url }}';">
+      <table cellpadding="5" cellspacing="0">
+        <tr>
+          {% if team.avatar %}
+            <td valign="top">
+              <img src="{{ team.avatar.url }}" alt="{{ team.display_name }}" class="menu-avatar-large"/>
+            </td>
+          {% else %}
+            <td valign="top">
+              <img src="/static/nophoto_{{ model_name|upper }}.png" alt="No Avatar" class="menu-avatar-large"/>
+            </td>
+          {% endif %}
+          <td valign="top">
+            <strong>{{ team }}</strong>
+            {% if team.description %}
+              <p>{{ team.description|linebreaksbr }}</p>
+            {% endif %}
+            {% if team.created_at %}
+              <p class="muted">Created {{ team.created_at|date:"M d, Y" }}</p>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+  {% endfor %}
+{% endif %}
+
+<div class="panel" style="text-align: center">
+  <h3>My Memberships</h3>
+  {% if not member_teams %}
+    - No entries -<br />
+  {% endif %}
+</div>
+
+{% if member_teams %}
+  {% for team in member_teams %}
+    <div class="post bgmouse" onclick="window.location.href='{{ team.get_absolute_url }}';">
+      <table cellpadding="5" cellspacing="0">
+        <tr>
+          {% if team.avatar %}
+            <td valign="top">
+              <img src="{{ team.avatar.url }}" alt="{{ team.display_name }}" class="menu-avatar-large"/>
+            </td>
+          {% else %}
+            <td valign="top">
+              <img src="/static/nophoto_{{ model_name|upper }}.png" alt="No Avatar" class="menu-avatar-large"/>
+            </td>
+          {% endif %}
+          <td valign="top">
+            <strong>{{ team }}</strong>
+            {% if team.description %}
+              <p>{{ team.description|linebreaksbr }}</p>
+            {% endif %}
+            {% if team.created_at %}
+              <p class="muted">Created {{ team.created_at|date:"M d, Y" }}</p>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </div>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}

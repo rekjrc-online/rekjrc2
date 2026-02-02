@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- homepage.html -->
+<div id="feed" class="feed">
+  {% include "posts/list.html" %}
+</div>
+<center>
+  <div id="loading">Loading more posts...</div>
+  <div id="end-message">&nbsp;</div>
+</center>
+<script src="static/scroll.js"></script>
+<script src="static/likes.js"></script>
+{% endblock %}

@@ -1,0 +1,189 @@
+<!-- stopwatch_race_run.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RekjRC Online - Run {{ racedriver.driver.displayname }}</title>
+<link rel="icon" href="/static/favicon.ico">
+<link rel="stylesheet" href="/static/styles.css" />
+<style>
+html { font-size: 16px; }
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #111;
+    color: #fff;
+    margin: 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h2 { margin-bottom: 1rem; font-size: 2rem; }
+
+.timers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 20rem;
+}
+
+.lcd-display {
+    font-size: 2.5rem;
+    background-color: #111;
+    color: #39ff14;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    width: 12rem;
+    text-align: center;
+    box-shadow: 0 0 1rem #0f0 inset;
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 20rem;
+}
+
+.button-row button {
+    flex: 1;
+    min-width: 3.75rem;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: #ff0;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#penaltyLog {
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 20rem;
+    font-family: monospace;
+    color: #ff0;
+    text-align: center;
+}
+
+@media (max-width: 400px) {
+    .lcd-display { font-size: 2rem; width: 10rem; }
+    .button-row button { font-size: 1.25rem; padding: 0.4rem; }
+}
+</style>
+</head>
+<body>
+
+<center>
+<h2>Run: {{ racedriver.driver.displayname }}</h2>
+
+<div class="timers">
+    <div>
+        <div class="lcd-display" id="elapsedDisplay">00:00.00</div>
+        <small>Elapsed Time</small>
+    </div>
+</div>
+
+<form method="post" id="runForm" action="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=racedriver.uuid %}">
+    {% csrf_token %}
+    <input type="hidden" id="elapsed_time" name="elapsed_time" value="{{ run.elapsed_time|default:"0" }}">
+    <br />
+    <div class="button-row">
+        <button type="button" id="startStopBtn" style="background-color: orangered; color: white;">Start</button>
+    </div>
+    <div class="button-row">
+        <button type="submit" id="submitBtn" disabled>Submit</button>
+    </div>
+</form>
+
+</center>
+
+<script>
+let startTime = 0;
+let elapsed = parseFloat(document.getElementById('elapsed_time').value) || 0;
+let running = false;
+let interval;
+
+const elapsedDisplay = document.getElementById('elapsedDisplay');
+
+const startStopBtn = document.getElementById('startStopBtn');
+const finishResetBtn = document.getElementById('finishResetBtn');
+const submitBtn = document.getElementById('submitBtn');
+
+const elapsedInput = document.getElementById('elapsed_time');
+
+let finished = false;
+
+function formatTime(sec) {
+    const minutes = Math.floor(sec / 60);
+    const seconds = Math.floor(sec % 60);
+    const hundredths = Math.floor((sec % 1) * 100);
+    return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(hundredths).padStart(2,'0')}`;
+}
+
+function updateDisplays() {
+    const now = running ? (Date.now() - startTime)/1000 + elapsed : elapsed;
+    elapsedDisplay.textContent = formatTime(now);
+    elapsedInput.value = now.toFixed(2);
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1;
+        utter.pitch = 1;
+        window.speechSynthesis.speak(utter);
+    }
+}
+
+// Start/Pause
+startStopBtn.addEventListener('click', () => {
+    if (!running) {
+        running = true;
+        startTime = Date.now();
+        interval = setInterval(updateDisplays, 50);
+        startStopBtn.textContent = 'Stop';
+    } else {
+        running = false;
+        clearInterval(interval);
+        elapsed += (Date.now() - startTime) / 1000;
+        updateDisplays();
+        disableControls();
+    }
+});
+
+function speakFinalScore(elapsedSeconds, points) {
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = Math.floor(elapsedSeconds % 60);
+    const hundredths = Math.floor((elapsedSeconds % 1) * 100);
+    const hundredthsDigits = hundredths.toString().padStart(2,'0').split('').join(' ');
+    const timeStr = `Time ${minutes} minute${minutes!==1?'s':''} ` +
+                    `${seconds} second${seconds!==1?'s':''} point ${hundredthsDigits}`;
+    speak(`Finished - ${pointsStr}`);
+}
+
+function disableControls() {
+    console.log(1);
+    startStopBtn.disabled = true;
+    submitBtn.disabled = false;
+    console.log(2);
+}
+
+updateDisplays();
+</script>
+
+</body>
+</html>

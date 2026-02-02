@@ -1,0 +1,20 @@
+<!-- posts/metrics.html -->
+<div class="metrics" data-post-id="{{ post.uuid }}">
+    {% if user.is_authenticated %}
+        <a href="#" onclick="event.stopPropagation();" class="like-btn text-decoration-none" data-post-id="{{ post.uuid }}">
+            {% if post.liked_by_user %}
+                <span class="heart">❤️</span>
+            {% else %}
+                <span class="heart">🤍</span>
+            {% endif %}
+            <span class="like-count">{{ post.likes_count }}</span>
+        </a> |
+        <a href="/posts/reply/{{ post.uuid }}/" onclick="event.stopPropagation();" class="text-decoration-none">
+            💬 {{ post.replies.count }}
+        </a>
+    {% else %}
+        <span class="heart">🤍</span>
+        <span class="like-count">{{ post.likes_count }}</span>
+        | 💬 {{ post.replies.count }}
+    {% endif %}
+</div>
