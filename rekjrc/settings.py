@@ -22,6 +22,8 @@ DEBUG = env.bool('DEBUG', default=True)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
     'localhost',
     'v2.rekjrc.com',
+    'rekjrc.com',
+    'www.rekjrc.com',
 ])
 
 INTERNAL_IPS = [
