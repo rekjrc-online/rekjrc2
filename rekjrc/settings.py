@@ -77,13 +77,14 @@ INSTALLED_APPS = [
     "laprace",
 
     # Site apps
-    "accounts",
+    #"accounts",
     "chat_app",
     "crud",
     "sponsors",
     "stripe_app",
     "pages",
     "urls_app",
+    "accounts.apps.AccountsConfig",
 ]
 
 # ------------------------------
