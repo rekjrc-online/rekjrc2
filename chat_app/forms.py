@@ -17,28 +17,32 @@ class ChatMessageForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user", None)
-        self.speaker = kwargs.pop("speaker", None)
         self.channel = kwargs.pop("channel", None)
         super().__init__(*args, **kwargs)
 
     def clean(self):
+        if self.user:
+            self.instance.user = self.user
+        if self.channel:
+            self.instance.channel_content_type = ContentType.objects.get_for_model(self.channel)
+            self.instance.channel_object_id = self.channel.pk
+
         cleaned_data = super().clean()
+
+        errors = []
         if not self.user:
-            raise forms.ValidationError("User is required.")
-        if not self.speaker:
-            raise forms.ValidationError("Speaker is required.")
+            errors.append("User is required.")
         if not self.channel:
-            raise forms.ValidationError("Channel is required.")
-        if self.speaker != self.user:
-            if not hasattr(self.speaker, "owner") or self.speaker.owner != self.user:
-                raise forms.ValidationError("You may only speak as yourself or objects you own.")
+            errors.append("Channel is required.")
+
+        if errors:
+            raise forms.ValidationError(errors)
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.user = self.user
-        instance.speaker_content_type = ContentType.objects.get_for_model(self.speaker)
-        instance.speaker_object_id = self.speaker.pk
         instance.channel_content_type = ContentType.objects.get_for_model(self.channel)
         instance.channel_object_id = self.channel.pk
         if commit:

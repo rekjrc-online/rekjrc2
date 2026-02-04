@@ -18,8 +18,7 @@ class CrudContextMixin:
         "updated_at",
         "entry_locked",
         "race_finished",
-        "allow_followers",
-        "enable_chat" ]
+    ]
 
     bottom_fields = [
         'is_active',
