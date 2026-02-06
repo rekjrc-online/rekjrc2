@@ -4,9 +4,11 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rekjrc.base_models import BaseModel
+import qrcode
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    uuid = models.UUIDField(unique=True, editable=False, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     is_verified = models.BooleanField(default=False)

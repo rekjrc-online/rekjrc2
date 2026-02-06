@@ -1,5 +1,6 @@
 asgiref==3.11.0
 channels==4.3.2
+colorama==0.4.6
 Django==6.0.1
 django-cors-headers==4.9.0
 django-environ==0.12.0
@@ -11,6 +12,7 @@ djangorestframework==3.16.1
 phonenumbers==9.0.22
 pillow==12.1.0
 psycopg2-binary==2.9.11
+qrcode==8.2
 sqlparse==0.5.5
 tzdata==2025.3
 ua-parser==1.0.1
