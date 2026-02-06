@@ -10,6 +10,7 @@ class UserProfile(models.Model):
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    sms_opt_in = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} Profile"

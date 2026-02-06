@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from races.models import Race, RaceDriver
 from topspeed.models import TopSpeedRun
 from topspeed.forms import TopSpeedRunForm
+from drivers.models import Driver
+from builds.models import Build
 
 User = get_user_model()
 
@@ -10,12 +12,13 @@ class TopSpeedRunTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="driver", password="pass")
         self.race = Race.objects.create(display_name="TopSpeed Test Race", owner=self.user)
+        self.driver = Driver.objects.create(display_name="Speedy Driver", owner=self.user)
+        self.build = Build.objects.create(display_name="RC Car 1", owner=self.user)
         self.racedriver = RaceDriver.objects.create(
             race=self.race,
             user=self.user,
-            driver_name="Speedy Driver",
-            model_name="RC Car 1"
-        )
+            driver=self.driver,
+            build=self.build)
 
     def test_topspeedrun_str_with_value(self):
         run = TopSpeedRun.objects.create(
@@ -28,8 +31,7 @@ class TopSpeedRunTests(TestCase):
     def test_topspeedrun_str_without_value(self):
         run = TopSpeedRun.objects.create(
             race=self.race,
-            racedriver=self.racedriver
-        )
+            racedriver=self.racedriver)
         self.assertEqual(str(run), f"{self.racedriver} - No top speed recorded")
 
     def test_topspeedrun_form_valid(self):

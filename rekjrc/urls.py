@@ -22,10 +22,10 @@ urlpatterns = [
     path('posts/', include(('posts.urls', 'posts'), namespace='posts')),
     path('chat/', include(('chat_app.urls', 'chat_app'), namespace='chat')),
 
+    path('u/', include(('urls_app.urls', 'urls_app'), namespace='urls_app')),
     # path('sponsors/', include(('sponsors.urls', 'sponsors'), namespace='sponsors')),
     # path('stripe/', include(('stripe_app.urls', 'stripe_app'), namespace='stripe')),
     # path('support/', include(('support.urls', 'support'), namespace='support')),
-    # path('u/', include(('urls_app.urls', 'urls_app'), namespace='urls_app')),
 
     path('builds/', include(('builds.urls', 'builds'), namespace='builds')),
     path('clubs/', include(('clubs.urls', 'clubs'), namespace='clubs')),

@@ -16,7 +16,7 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "phone_number")
+    list_display = ("user", "phone_number", "sms_opt_in", "is_verified",)
     search_fields = ("user__username", "user__email", "phone_number")
 
 @admin.register(Follow)

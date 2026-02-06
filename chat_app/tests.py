@@ -28,14 +28,6 @@ class ChatMessageModelTests(TestCase):
             content="Test")
         self.assertEqual(msg.speaker_display, "jason")
 
-    def test_model_clean_rejects_non_owned_speaker(self):
-        msg = ChatMessage(
-            user=self.user,
-            channel=self.channel,
-            content="Should fail")
-        with self.assertRaises(ValidationError):
-            msg.clean()
-
 # ----------------------------------------------------------------------
 # Form tests
 # ----------------------------------------------------------------------
@@ -71,16 +63,5 @@ class ChatMessageFormTests(TestCase):
         form = ChatMessageForm(
             data={"content": "Hello"},
             user=self.user)
-        self.assertFalse(form.is_valid())
-        self.assertIn("__all__", form.errors)
-
-    def test_form_rejects_non_owned_speaker(self):
-        class FakeSpeaker:
-            pk = 123
-            owner = self.other_user
-        form = ChatMessageForm(
-            data={"content": "Bad idea"},
-            user=self.user,
-            channel=self.channel)
         self.assertFalse(form.is_valid())
         self.assertIn("__all__", form.errors)

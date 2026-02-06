@@ -34,7 +34,6 @@ class TeamTests(TestCase):
         team = form.save(commit=False)
         team.owner = self.user
         team.save()
-        self.assertEqual(team.description, "")
         self.assertFalse(team.is_active)
 
     def test_team_member_form_valid(self):

@@ -4,7 +4,6 @@ from django.apps import apps
 
 from .models import Event
 
-
 class EventForm(ModelForm):
     RELATED_CONFIG = {
         "teams": {
@@ -88,7 +87,8 @@ class EventForm(ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit)
-        self._save_related(instance)
+        if instance.pk:
+            self._save_related(instance)
         return instance
 
     def _save_related(self, event):
@@ -96,11 +96,7 @@ class EventForm(ModelForm):
             through = apps.get_model(cfg["through"])
             field_name = cfg["field"]
             selected = self.cleaned_data.get(key, [])
-
-            # Clear existing
             through.objects.filter(event=event).delete()
-
-            # Recreate
             through.objects.bulk_create(
                 [
                     through(

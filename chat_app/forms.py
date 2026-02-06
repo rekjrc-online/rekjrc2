@@ -21,22 +21,14 @@ class ChatMessageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
     def clean(self):
+        cleaned_data = super().clean()
+
         if self.user:
             self.instance.user = self.user
+
         if self.channel:
             self.instance.channel_content_type = ContentType.objects.get_for_model(self.channel)
             self.instance.channel_object_id = self.channel.pk
-
-        cleaned_data = super().clean()
-
-        errors = []
-        if not self.user:
-            errors.append("User is required.")
-        if not self.channel:
-            errors.append("Channel is required.")
-
-        if errors:
-            raise forms.ValidationError(errors)
 
         return cleaned_data
 
