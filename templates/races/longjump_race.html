@@ -1,0 +1,214 @@
+<!-- longjump_race_run.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RekjRC Online - Run {{ racedriver }}</title>
+
+<link rel="stylesheet" href="/static/styles.css" />
+
+<style>
+html { font-size: 16px; }
+
+body {
+    font-family: 'Courier New', monospace;
+    background-color: #111;
+    color: #fff;
+    margin: 0;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h2 { margin-bottom: 1rem; font-size: 2rem; }
+
+.timers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    max-width: 20rem;
+}
+
+.lcd-display {
+    font-size: 2.5rem;
+    background-color: #111;
+    color: #39ff14;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    width: 12rem;
+    text-align: center;
+    box-shadow: 0 0 1rem #0f0 inset;
+}
+
+.button-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+    width: 100%;
+    max-width: 20rem;
+}
+
+.button-row button {
+    flex: 1;
+    min-width: 3.75rem;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background-color: #ff0;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#penaltyLog {
+    margin-top: 1.5rem;
+    width: 100%;
+    max-width: 20rem;
+    font-family: monospace;
+    color: #ff0;
+    text-align: center;
+}
+
+@media (max-width: 400px) {
+    .lcd-display { font-size: 2rem; width: 10rem; }
+    .button-row button { font-size: 1.25rem; padding: 0.4rem; }
+}
+</style>
+
+<style>
+    .submit-btn { max-width: 220px; width: 100%; }
+    .keypad button { width: 70px; height: 50px; font-size: 1.5rem; }
+</style>
+
+</head>
+
+<body>
+<center>
+
+<h2>
+    Long Jump Run<br />
+    {{ racedriver.driver }}<br />
+    {{ racedriver.build }}
+</h2>
+
+<div class="timers">
+    <div>
+        <div class="lcd-display" id="jumpDisplay">0' 0"</div>
+        <small>Distance</small>
+    </div>
+</div>
+
+<form action="{% url 'longjump:race' race_uuid=race.uuid racedriver_uuid=racedriver.uuid %}" method="post" id="runForm">
+
+    {% csrf_token %}
+    <input type="hidden" id="feet" name="feet">
+    <input type="hidden" id="inches" name="inches">
+
+    <!-- Keypad -->
+    <div class="keypad">
+
+        <div class="button-row">
+            <button type="button" onclick="press('7')">7</button>
+            <button type="button" onclick="press('8')">8</button>
+            <button type="button" onclick="press('9')">9</button>
+        </div>
+
+        <div class="button-row">
+            <button type="button" onclick="press('4')">4</button>
+            <button type="button" onclick="press('5')">5</button>
+            <button type="button" onclick="press('6')">6</button>
+        </div>
+
+        <div class="button-row">
+            <button type="button" onclick="press('1')">1</button>
+            <button type="button" onclick="press('2')">2</button>
+            <button type="button" onclick="press('3')">3</button>
+        </div>
+
+        <div class="button-row">
+            <button type="button" onclick="press('.')">.</button>
+            <button type="button" onclick="press('0')">0</button>
+            <button type="button" onclick="backspace()">⌫</button>
+        </div>
+    </div>
+
+    <div class="button-row">
+        <button type="submit" id="submitBtn" class="submit-btn" disabled>
+            Submit
+        </button>
+    </div>
+
+</form>
+
+</center>
+
+<script>
+let feetBuffer = "";      // digits for feet
+let inchesBuffer = "";    // digits for inches
+let inputPhase = "feet";  // "feet" or "inches"
+
+const display = document.getElementById("jumpDisplay");
+const feetInput = document.getElementById("feet");
+const inchesInput = document.getElementById("inches");
+const submitBtn = document.getElementById("submitBtn");
+
+function updateDisplay() {
+    const feet = parseInt(feetBuffer || "0", 10);
+    const inches = parseInt(inchesBuffer || "0", 10);
+    display.textContent = `${feet}' ${inches}"`;
+    feetInput.value = feet;
+    inchesInput.value = inches;
+    submitBtn.disabled = (feet === 0 && inches === 0);}
+
+function press(char) {
+    if (char === ".") {
+        // switch to inches input
+        inputPhase = "inches";
+        return;
+    }
+
+    if (!/^\d$/.test(char)) return; // only allow digits
+
+    if (inputPhase === "feet") {
+        if (feetBuffer.length >= 3) return; // max 999 feet
+        feetBuffer += char;
+    } else {
+        if (inchesBuffer.length >= 2) return; // max 11 inches
+        const newInches = parseInt(inchesBuffer + char, 10);
+        if (newInches > 11) return; // block invalid inches
+        inchesBuffer += char;
+    }
+
+    updateDisplay();
+}
+
+function backspace() {
+    if (inputPhase === "inches" && inchesBuffer.length > 0) {
+        inchesBuffer = inchesBuffer.slice(0, -1);
+    } else if (inputPhase === "inches" && inchesBuffer.length === 0) {
+        // if inches empty, backspace goes back to feet
+        inputPhase = "feet";
+        feetBuffer = feetBuffer.slice(0, -1);
+    } else if (inputPhase === "feet") {
+        feetBuffer = feetBuffer.slice(0, -1);
+    }
+
+    updateDisplay();
+}
+
+updateDisplay();
+</script>
+
+</body>
+</html>

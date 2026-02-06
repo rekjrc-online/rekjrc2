@@ -2,6 +2,7 @@ from django.db import models
 from rekjrc.base_models import BaseModel
 from races.models import Race, RaceDriver
 
+
 class StopwatchRun(BaseModel):
     race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='stopwatch_runs')
     racedriver = models.ForeignKey(RaceDriver, on_delete=models.CASCADE, related_name='stopwatch_runs')

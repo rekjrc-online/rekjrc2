@@ -28,9 +28,7 @@
     {% empty %}
         <em>No locations</em> -
     {% endfor %}
-    <div>
-        <a href="{% url 'events:location-add' object.uuid %}" class="button">Add location</a>
-    </div>
+    <a href="{% url 'events:location-add' object.uuid %}" class="button">Add location</a>
 </div>
 
 <div class="panel">
