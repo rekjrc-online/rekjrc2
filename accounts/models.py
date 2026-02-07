@@ -35,7 +35,7 @@ class UserProfile(models.Model):
             "sms_opt_in": self.sms_opt_in }
         qr_data = json.dumps(qr_payload)
         qr = qrcode.QRCode(
-            version=None,  # auto-fit
+            version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
             border=3)
