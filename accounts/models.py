@@ -4,18 +4,105 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from rekjrc.base_models import BaseModel
+from PIL import Image, ImageDraw, ImageFont
+import uuid as uuid_lib
 import qrcode
+import json
+import os
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    uuid = models.UUIDField(unique=True, editable=False)
+    uuid = models.UUIDField(default=uuid_lib.uuid4, unique=True, editable=False)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
-    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     sms_opt_in = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} Profile"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        qr_payload = {
+            "id": self.user.id,
+            "uuid": str(self.uuid),
+            "username": self.user.username,
+            "email": self.user.email,
+            "first_name": self.user.first_name,
+            "last_name": self.user.last_name,
+            "phone": self.phone_number,
+            "verified": self.is_verified,
+            "sms_opt_in": self.sms_opt_in }
+        qr_data = json.dumps(qr_payload)
+        qr = qrcode.QRCode(
+            version=None,  # auto-fit
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=3
+        )
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+
+        header_lines = [f"{self.user.id}: {self.user.first_name} {self.user.last_name}", " "]
+
+        try:
+            font = ImageFont.truetype("arial.ttf", 36)
+        except IOError:
+            font = ImageFont.load_default()
+
+        # Get font metrics
+        ascent, descent = font.getmetrics()
+
+        # Measure each line
+        line_widths = []
+        line_heights = []
+        for line in header_lines:
+            bbox = font.getbbox(line)
+            width = bbox[2] - bbox[0]
+            # Use ascent + descent as line height to avoid clipping
+            height = ascent + descent
+            line_widths.append(width)
+            line_heights.append(height)
+
+        text_width = max(line_widths)
+        text_height_total = sum(line_heights) + (len(header_lines)-1) * 5  # 5 px spacing
+
+        # Measure each line using Pillow ≥10 API
+        line_sizes = [font.getbbox(line) for line in header_lines]
+        line_widths = [bbox[2] - bbox[0] for bbox in line_sizes]
+        line_heights = [bbox[3] - bbox[1] for bbox in line_sizes]
+
+        text_width = max(line_widths)
+        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5  # 5 px spacing
+
+        # --- 5. Create final image with header space ---
+        padding = 10
+        total_width = max(qr_img.width, text_width + 2*padding)
+        total_height = qr_img.height + text_height_total + 2*padding + 5  # extra bottom padding
+
+        final_img = Image.new("RGB", (total_width, total_height), "white")
+        draw_final = ImageDraw.Draw(final_img)
+
+        # Draw each header line centered
+        current_y = padding
+        for i, line in enumerate(header_lines):
+            line_width = line_widths[i]
+            line_height = line_heights[i]
+            text_x = (total_width - line_width) // 2
+            draw_final.text((text_x, current_y), line, fill="black", font=font)
+            current_y += line_height + 5  # spacing between lines
+
+        # Paste QR code below the header
+        qr_x = (total_width - qr_img.width) // 2
+        qr_y = current_y
+        final_img.paste(qr_img, (qr_x, qr_y))
+
+        # --- 6. Save QR PNG ---
+        qr_folder = os.path.join(settings.MEDIA_ROOT, "qrcodes/users")
+        os.makedirs(qr_folder, exist_ok=True)
+        qr_path = os.path.join(qr_folder, f"{self.uuid}.png")
+        final_img.save(qr_path)
 
 class Follow(BaseModel):
     follower = models.ForeignKey(
@@ -38,3 +125,22 @@ class Follow(BaseModel):
 
     def __str__(self):
         return f"{self.follower} follows {self.object}"
+
+def serialize_user_with_profile(user: User) -> str:
+    profile = getattr(user, "profile", None)
+    data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name }
+    if profile:
+        data["profile"] = {
+            "uuid": str(profile.uuid),
+            "phone_number": profile.phone_number,
+            "is_verified": profile.is_verified,
+            "sms_opt_in": profile.sms_opt_in }
+    else:
+        data["profile"] = None
+
+    return json.dumps(data)

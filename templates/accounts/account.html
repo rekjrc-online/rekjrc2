@@ -23,4 +23,12 @@
         </table>
     </form>
 </div>
+<div class="panel">
+    <center>
+        <h3>My QR Code</h3>
+        <a href="/media/qrcodes/users/{{ user.profile.uuid }}.png">
+            <img src="/media/qrcodes/users/{{ user.profile.uuid }}.png" alt="My QR Code" style="width: 200px; height: 200px;" />
+        </a>
+    </center>
+</div>
 {% endblock %}

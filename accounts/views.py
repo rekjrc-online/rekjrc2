@@ -3,7 +3,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.views.generic import UpdateView, CreateView
 from django.urls import reverse_lazy
-from .forms import RegisterForm
+from .forms import RegisterForm, UserEditForm
+
+class AccountEditView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = UserEditForm
+    template_name = "accounts/account.html"
+    success_url = reverse_lazy("accounts:account")
+    def get_object(self):
+        return self.request.user
 
 class LoginView(auth_views.LoginView):
     template_name = "accounts/login.html"
@@ -30,15 +38,6 @@ class PasswordResetConfirmView(auth_views.PasswordResetConfirmView):
 
 class PasswordResetCompleteView(auth_views.PasswordResetCompleteView):
     template_name = "accounts/password_reset_complete.html"
-
-class AccountEditView(LoginRequiredMixin, UpdateView):
-    model = User
-    fields = ["username", "first_name", "last_name", "email"]
-    template_name = "accounts/account.html"
-    success_url = reverse_lazy("accounts:account")
-
-    def get_object(self):
-        return self.request.user
 
 class RegisterView(CreateView):
     model = User

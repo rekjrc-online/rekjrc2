@@ -51,6 +51,11 @@ class ClubMember(BaseModel):
         "auth.User",
         on_delete=models.CASCADE,
         related_name="club_memberships")
+    invited_by = models.ForeignKey(
+        "auth.User",
+        on_delete=models.SET_NULL,
+        related_name="club_invitations",
+        null=True, blank=True)
     role = models.CharField(max_length=100, blank=True)
 
     class Meta:

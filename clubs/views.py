@@ -1,9 +1,11 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from crud.views import CrudContextMixin
-from .models import Club, ClubLocation, ClubMember, ClubTeam
+from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from accounts.models import UserProfile
+from crud.views import CrudContextMixin
+from .models import Club, ClubLocation, ClubMember, ClubTeam
 
 class Advanced_(CrudContextMixin, DetailView):
     model = Club
@@ -66,14 +68,21 @@ class ClubLocationRemove(CrudContextMixin, View):
         cl.delete()
         return redirect("clubs:advanced", uuid=uuid)
 
-class ClubMemberAdd(CrudContextMixin, CreateView):
+class ClubMemberAdd(CreateView):
     model = ClubMember
-    fields = ["user", "role"]
-    template_name = "crud/form.html"
+    fields = [ ]
+    template_name = "clubs/add_member.html"
+
     def form_valid(self, form):
         club = get_object_or_404(Club, uuid=self.kwargs["uuid"])
+        profile_uuid = self.request.POST.get("profile_uuid")
+        profile = get_object_or_404(UserProfile, uuid=profile_uuid)
+        if ClubMember.objects.filter(club=club,user=profile.user).exists():
+            return redirect(self.get_success_url())
+        form.instance.user = profile.user
         form.instance.club = club
         return super().form_valid(form)
+
     def get_success_url(self):
         return reverse("clubs:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
