@@ -86,7 +86,7 @@ class Race(BaseModel, Ownable):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        qr_payload = "https://rekjrc.com/races/"+str(self.uuid)+"/join/"
+        qr_payload = "rekjrc.com/races/"+str(self.uuid)+"/join/"
         qr_data = json.dumps(qr_payload)
         qr = qrcode.QRCode(
             version=None,

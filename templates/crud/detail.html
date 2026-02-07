@@ -110,6 +110,10 @@
         <img src="/media/qrcodes/races/{{ object.uuid }}.png" />
       </a>
     </div>
+  {% elif object.entry_type == "Invitational" %}
+    <div class="panel">
+      <h3>Invitational Race</h3>
+    </div>
   {% endif %}
 {% endif %}
 
