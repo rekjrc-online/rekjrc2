@@ -38,16 +38,16 @@ class UserProfile(models.Model):
             version=None,  # auto-fit
             error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
-            border=3
-        )
+            border=3)
         qr.add_data(qr_data)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
         header_lines = [f"{self.user.id}: {self.user.first_name} {self.user.last_name}", " "]
 
+        font_path = os.path.join(settings.BASE_DIR, "assets", "fonts", "DejaVuSans.ttf")
         try:
-            font = ImageFont.truetype("arial.ttf", 36)
+            font = ImageFont.truetype(font_path, 36)
         except IOError:
             font = ImageFont.load_default()
 
