@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.urls import reverse
+from PIL import Image, ImageDraw, ImageFont
 from rekjrc.base_models import BaseModel, Ownable
 from clubs.models import Club
 from events.models import Event
@@ -8,6 +9,9 @@ from locations.models import Location
 from teams.models import Team
 from tracks.models import Track
 from stores.models import Store
+import qrcode
+import json
+import os
 
 class Race(BaseModel, Ownable):
     RACE_TYPE_CHOICES = [
@@ -17,59 +21,59 @@ class Race(BaseModel, Ownable):
         ('Stopwatch Race',  'Stopwatch Race'),
         ('Long Jump',       'Long Jump'),
         ('Top Speed',       'Top Speed'),
-        ('Judged Event',    'Judged Event'),
-    ]
+        ('Judged Event',    'Judged Event') ]
     race_type = models.CharField(
         max_length=30,
         choices=RACE_TYPE_CHOICES,
-        default='Lap Race',
-    )
+        default='Lap Race')
+    ENTRY_TYPE_CHOICES = [
+        ('Open', 'Open'),
+        ('Invitational', 'Invitational') ]
+    entry_type = models.CharField(
+        max_length=20,
+        choices=ENTRY_TYPE_CHOICES,
+        default='Open',
+        blank=True,
+        null=True)
     event = models.ForeignKey(
         Event,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     location = models.ForeignKey(
         Location,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     track = models.ForeignKey(
         Track,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     club = models.ForeignKey(
         Club,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     team = models.ForeignKey(
         Team,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     store = models.ForeignKey(
         Store,
         on_delete=models.SET_NULL,
         related_name='races',
         null=True,
-        blank=True,
-    )
+        blank=True)
     TRANSPONDER_CHOICES = [
         ('LapMonitor','LapMonitor'),
-        ('MyLaps','MyLaps'),
-    ]
+        ('MyLaps','MyLaps') ]
     transponder = models.CharField(max_length=10, choices=TRANSPONDER_CHOICES, blank=True, null=True)
     entry_locked = models.BooleanField(default=False)
     race_finished = models.BooleanField(default=False)
@@ -79,6 +83,60 @@ class Race(BaseModel, Ownable):
 
     def get_absolute_url(self):
         return reverse("races:detail", kwargs={"uuid": self.uuid})
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        qr_payload = "https://rekjrc.com/races/"+str(self.uuid)+"/join/"
+        qr_data = json.dumps(qr_payload)
+        qr = qrcode.QRCode(
+            version=None,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=3)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        header_lines = [self.display_name, " "]
+        font_path = os.path.join(settings.BASE_DIR, "assets", "fonts", "DejaVuSans.ttf")
+        try:
+            font = ImageFont.truetype(font_path, 36)
+        except IOError:
+            font = ImageFont.load_default()
+        ascent, descent = font.getmetrics()
+        line_widths = []
+        line_heights = []
+        for line in header_lines:
+            bbox = font.getbbox(line)
+            width = bbox[2] - bbox[0]
+            height = ascent + descent
+            line_widths.append(width)
+            line_heights.append(height)
+        text_width = max(line_widths)
+        text_height_total = sum(line_heights) + (len(header_lines)-1) * 5
+        line_sizes = [font.getbbox(line) for line in header_lines]
+        line_widths = [bbox[2] - bbox[0] for bbox in line_sizes]
+        line_heights = [bbox[3] - bbox[1] for bbox in line_sizes]
+        text_width = max(line_widths)
+        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5  # 5 px spacing
+        padding = 10
+        total_width = max(qr_img.width, text_width + 2*padding)
+        total_height = qr_img.height + text_height_total + 2*padding + 5  # extra bottom padding
+        final_img = Image.new("RGB", (total_width, total_height), "white")
+        draw_final = ImageDraw.Draw(final_img)
+        current_y = padding
+        for i, line in enumerate(header_lines):
+            line_width = line_widths[i]
+            line_height = line_heights[i]
+            text_x = (total_width - line_width) // 2
+            draw_final.text((text_x, current_y), line, fill="black", font=font)
+            current_y += line_height + 5
+        qr_x = (total_width - qr_img.width) // 2
+        qr_y = current_y
+        final_img.paste(qr_img, (qr_x, qr_y))
+        qr_folder = os.path.join(settings.MEDIA_ROOT, "qrcodes/races")
+        os.makedirs(qr_folder, exist_ok=True)
+        qr_path = os.path.join(qr_folder, f"{self.uuid}.png")
+        final_img.save(qr_path)
 
 class RaceDriver(BaseModel):
     race = models.ForeignKey(

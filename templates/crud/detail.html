@@ -103,7 +103,14 @@
       {% endfor %}
     </ul>
   </div>
-
+  {% if object.entry_type == "Open" %}
+    <div class="panel">
+      <h3>Open Entry Race</h3>
+      <a href="/media/qrcodes/races/{{ object.uuid }}.png">
+        <img src="/media/qrcodes/races/{{ object.uuid }}.png" />
+      </a>
+    </div>
+  {% endif %}
 {% endif %}
 
 {% endblock %}
