@@ -16,7 +16,7 @@ def custom_500(request):
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('', views.homepage, name='homepage'),
-    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type='text/plain')),
+    path("robots.txt",lambda request: HttpResponse("User-agent: *\nDisallow:\n",content_type="text/plain; charset=utf-8"),),
     path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
     path('pages/', include(('pages.urls', 'pages'), namespace='pages')),
     path('posts/', include(('posts.urls', 'posts'), namespace='posts')),
