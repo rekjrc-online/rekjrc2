@@ -12,61 +12,61 @@
     <p><strong>Select your driver:</strong></p>
     <table>
         <tbody>
-            {% for profile in drivers %}
-            <tr>
-                <td style="padding-right:10px; padding-bottom:20px;">
-                    <input type="radio" name="driver_uuid" value="{{ profile.uuid }}" required>
-                </td>
-                <td style="padding-right:10px;">
-                    {% if profile.avatar %}
-                        <img src="{{ profile.avatar.url }}" alt="{{ profile }}" class="avatar">
-                    {% else %}
-                        <img src="/static/nophoto_DRIVER.png" class="avatar">
-                    {% endif %} &nbsp;
-                </td>
-                <td width="100%" style="padding-bottom:20px;">
-                    {{ profile }}
-                </td>
-            </tr>
-            {% endfor %}
+            {% if drivers %}
+                {% for profile in drivers %}
+                    <tr>
+                        <td style="padding-right:10px; padding-bottom:20px;">
+                            <input type="radio" name="driver_uuid" value="{{ profile.uuid }}" required>
+                        </td>
+                        <td style="padding-right:10px;">
+                            {% if profile.avatar %}
+                                <img src="{{ profile.avatar.url }}" alt="{{ profile }}" class="avatar">
+                            {% else %}
+                                <img src="/static/nophoto_DRIVER.png" class="avatar">
+                            {% endif %} &nbsp;
+                        </td>
+                        <td width="100%" style="padding-bottom:20px;">
+                            {{ profile }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="3">-Please add a driver-</td></tr>
+            {% endif %}
         </tbody>
     </table>
 
     <p><strong>Select your model:</strong></p>
     <table>
         <tbody>
-            {% for profile in builds %}
-            <tr>
-                <td style="padding-right:10px; padding-bottom:20px;">
-                    <input type="radio" name="build_uuid" value="{{ profile.uuid }}" required>
-                </td>
-                <td style="padding-right:10px;">
-                    {% if profile.avatar %}
-                        <img src="{{ profile.avatar.url }}" alt="{{ profile }}" class="avatar">
-                    {% else %}
-                        <img src="/static/nophoto_MODEL.png" class="avatar">
-                    {% endif %} &nbsp;
-                </td>
-                <td style="padding-bottom:20px;" width="100%">
-                    {{ profile }}
-                </td>
-            </tr>
-            {% endfor %}
+            {% if builds %}
+                {% for profile in builds %}
+                    <tr>
+                        <td style="padding-right:10px; padding-bottom:20px;">
+                            <input type="radio" name="build_uuid" value="{{ profile.uuid }}" required>
+                        </td>
+                        <td style="padding-right:10px;">
+                            {% if profile.avatar %}
+                                <img src="{{ profile.avatar.url }}" alt="{{ profile }}" class="avatar">
+                            {% else %}
+                                <img src="/static/nophoto_MODEL.png" class="avatar">
+                            {% endif %} &nbsp;
+                        </td>
+                        <td style="padding-bottom:20px;" width="100%">
+                            {{ profile }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="3">-Please add a build-</td></tr>
+            {% endif %}
         </tbody>
     </table>
 
     {% if race.transponder %}
         <p><strong>Transponder Number:</strong></p>
-        <input
-            type="text"
-            name="transponder"
-            maxlength="10"
-            placeholder="{{ race.transponder }} ID Required"
-           
-            required
-        >
+        <input type="text" name="transponder" maxlength="10" placeholder="{{ race.transponder }} ID Required" required />
     {% endif %}
-
 
     <div>
         <button type="submit">

@@ -117,10 +117,10 @@ class Race(BaseModel, Ownable):
         line_widths = [bbox[2] - bbox[0] for bbox in line_sizes]
         line_heights = [bbox[3] - bbox[1] for bbox in line_sizes]
         text_width = max(line_widths)
-        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5  # 5 px spacing
+        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5
         padding = 10
         total_width = max(qr_img.width, text_width + 2*padding)
-        total_height = qr_img.height + text_height_total + 2*padding + 5  # extra bottom padding
+        total_height = qr_img.height + text_height_total + 2*padding + 5
         final_img = Image.new("RGB", (total_width, total_height), "white")
         draw_final = ImageDraw.Draw(final_img)
         current_y = padding
