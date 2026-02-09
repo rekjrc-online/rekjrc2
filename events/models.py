@@ -20,21 +20,21 @@ class Event(BaseModel, Ownable):
     def get_absolute_url(self):
         return reverse("events:detail", kwargs={"uuid": self.uuid})
 
-class EventLocation(BaseModel):
+class EventRace(BaseModel):
     event = models.ForeignKey(
         Event,
         on_delete=models.CASCADE,
-        related_name="event_locations")
-    location = models.ForeignKey(
-        Location,
+        related_name="event_races")
+    race = models.ForeignKey(
+        "races.Race",
         on_delete=models.CASCADE,
-        related_name="event_locations")
+        related_name="event_races")
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["event", "location"],
-                name="unique_event_location" )]
+                fields=["event", "race"],
+                name="unique_event_race" )]
 
 class EventTeam(BaseModel):
     event = models.ForeignKey(
@@ -84,18 +84,18 @@ class EventStore(BaseModel):
                 fields=["event", "store"],
                 name="unique_event_store" )]
 
-class EventRace(BaseModel):
+class EventLocation(BaseModel):
     event = models.ForeignKey(
         Event,
         on_delete=models.CASCADE,
-        related_name="event_races")
-    race = models.ForeignKey(
-        "races.Race",
+        related_name="event_locations")
+    location = models.ForeignKey(
+        Location,
         on_delete=models.CASCADE,
-        related_name="event_races")
+        related_name="event_locations")
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["event", "race"],
-                name="unique_event_race" )]
+                fields=["event", "location"],
+                name="unique_event_location" )]

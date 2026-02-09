@@ -1,0 +1,16 @@
+<div class="panel">
+    {% if is_owner %}
+        {% if object.race_finished %}
+            <h2>Race Finished</h2>
+        {% elif racedrivers %}
+            <form method="get" action="{% url 'races:start' object.uuid %}" style="display: inline;">
+                <button type="submit" class="button">Start Race</button>
+            </form><p>
+        {% endif %}
+    {% endif %}
+    {% if object.enable_chat %}
+        <form method="get" action="{% url 'chat:room' model_name object.uuid %}" style="display: inline;">
+            <button type="submit" class="button">Enter Chat Room</button>
+        </form>
+    {% endif %}
+</div>

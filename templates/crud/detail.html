@@ -15,27 +15,7 @@
 </div>
 
 {% if model_name == "race" %}
-  <div class="panel">
-    {% if is_owner %}
-      {% if object.race_finished %}
-        <h2>Race Finished</h2>
-      {% elif racedrivers %}
-        <form method="get" action="{% url 'races:start' object.uuid %}" style="display: inline;">
-          <button type="submit" class="button">Start Race</button>
-        </form><p>
-      {% endif %}
-    {% endif %}
-    {% if not object.race_finished and not object.entry_locked %}
-      <form method="get" action="{% url 'races:join' object.uuid %}" style="display: inline;">
-        <button type="submit" class="button">Enter Race</button>
-      </form>
-    {% endif %}
-    {% if object.enable_chat %}
-      <form method="get" action="{% url 'chat:room' model_name object.uuid %}" style="display: inline;">
-        <button type="submit" class="button">Enter Chat Room</button>
-      </form>
-    {% endif %}
-  </div>
+  {% include "races/detail1.html" %}
 {% endif %}
 
 <div class="panel" style="text-align: center">
@@ -43,7 +23,9 @@
     {% for label, value in field_values %}
       {% if value and label != "is active" and label != "avatar" %}
         <tr>
-          <td align="left"><strong>{{ label|title }}</strong></td>
+          <td align="left">
+            <strong>{{ label|title }}</strong>
+          </td>
           <td align="left">
             {% if value.0 and value.0.0 and value.0.1 %}
               {# foreign key list #}
@@ -51,8 +33,12 @@
                 {% for sub_label, sub_value in value %}
                   {% if sub_value %}
                     <tr>
-                      <td align="left">{{ sub_label|title }}</td>
-                      <td align="left">{{ sub_value }}</td>
+                      <td align="left">
+                        {{ sub_label|title }}
+                      </td>
+                      <td align="left">
+                        {{ sub_value }}
+                      </td>
                     </tr>
                   {% endif %}
                 {% endfor %}
@@ -87,34 +73,9 @@
 </div>
 
 {% if model_name == "race" %}
-  <div class="panel">
-    <h4>Race Entries</h4>
-    <ul>
-      {% for racedriver in racedrivers %}
-        <li>
-          {% if racedriver.transponder %}
-            #{{ racedriver.transponder }} -
-          {% endif %}
-          {{ racedriver.driver }}
-          ({{ racedriver.build }})
-        </li>
-      {% empty %}
-        <li>No drivers have joined
-      {% endfor %}
-    </ul>
-  </div>
-  {% if object.entry_type == "Open" %}
-    <div class="panel">
-      <h3>Open Entry Race</h3>
-      <a href="/media/qrcodes/races/{{ object.uuid }}.png">
-        <img src="/media/qrcodes/races/{{ object.uuid }}.png" />
-      </a>
-    </div>
-  {% elif object.entry_type == "Invitational" %}
-    <div class="panel">
-      <h3>Invitational Race</h3>
-    </div>
-  {% endif %}
+  {% include "races/detail2.html" %}
+{% elif model_name == "event" %}
+  {% include "events/detail.html" %}
 {% endif %}
 
 {% endblock %}

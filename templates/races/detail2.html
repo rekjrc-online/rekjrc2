@@ -1,0 +1,38 @@
+<div class="panel">
+    <h4>Race Entries</h4>
+    <ul>
+        {% for racedriver in racedrivers %}
+            <li>
+                {% if racedriver.transponder %}
+                    #{{ racedriver.transponder }} -
+                {% endif %}
+                {{ racedriver.driver }}
+                ({{ racedriver.build }})
+            </li>
+        {% empty %}
+            <li>No drivers have joined
+        {% endfor %}
+    </ul>
+</div>
+
+{% if object.entry_type == "Open" %}
+    {% if object.entry_locked == False %}
+        <div class="panel">
+            <center>
+                <h3>Open Entry Race</h3>
+                <hr>
+                <form method="get" action="{% url 'races:join' object.uuid %}" style="display: inline;">
+                    <button type="submit" class="button">Enter Race</button>
+                </form>
+                <hr>
+                <a href="/media/qrcodes/races/{{ object.uuid }}.png">
+                    <img src="/media/qrcodes/races/{{ object.uuid }}.png" />
+                </a>
+            </center>
+        </div>
+    {% elif object.entry_type == "Invitational" %}
+        <div class="panel">
+            <h3>Invitational Race</h3>
+        </div>
+    {% endif %}
+{% endif %}

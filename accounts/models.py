@@ -126,21 +126,3 @@ class Follow(BaseModel):
     def __str__(self):
         return f"{self.follower} follows {self.object}"
 
-def serialize_user_with_profile(user: User) -> str:
-    profile = getattr(user, "profile", None)
-    data = {
-        "id": user.id,
-        "username": user.username,
-        "email": user.email,
-        "first_name": user.first_name,
-        "last_name": user.last_name }
-    if profile:
-        data["profile"] = {
-            "uuid": str(profile.uuid),
-            "phone_number": profile.phone_number,
-            "is_verified": profile.is_verified,
-            "sms_opt_in": profile.sms_opt_in }
-    else:
-        data["profile"] = None
-
-    return json.dumps(data)

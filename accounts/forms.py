@@ -17,10 +17,9 @@ class RegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit)
         phone = self.cleaned_data.get("phone_number", "")
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        profile.phone_number = phone
+        user.profile.phone_number = phone
         if commit:
-            profile.save()
+            user.profile.save()
         return user
 
 class UserEditForm(forms.ModelForm):

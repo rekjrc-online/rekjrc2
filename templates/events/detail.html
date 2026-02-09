@@ -1,0 +1,66 @@
+<!-- events/detail.html -->
+
+{% if event.event_races.exists %}
+    <div class="panel">
+        <h4>Races</h4>
+        <ul>
+            {% for race in object.event_races.all %}
+                <li>{{ race.race }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if event.event_teams.exists %}
+    <div class="panel">
+        <h4>Teams</h4>
+        <ul>
+            {% for team in object.event_teams.all %}
+                <li>{{ team.team }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if event.event_clubs.exists %}
+    <div class="panel">
+        <h4>Clubs</h4>
+        <ul>
+            {% for club in object.event_clubs.all %}
+                <li>{{ club.club }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if event.event_stores.exists %}
+    <div class="panel">
+        <h4>Stores</h4>
+        <ul>
+            {% for store in object.event_stores.all %}
+                <li>{{ store.store }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if event.event_locations.exists %}
+    <div class="panel">
+        <h4>Locations</h4>
+        <ul>
+            {% for location in object.event_locations.all %}
+                <li>{{ location.location }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+
+<div class="panel">
+    <h4>Clubs</h4>
+    <ul>
+        {% for club in object.event_clubs.all %}
+            <li>{{ club.club }}</li>
+        {% endfor %}
+    </ul>
+</div>
