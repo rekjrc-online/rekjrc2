@@ -5,5 +5,4 @@ from .models import UserProfile
 
 @receiver(post_save, sender=User)
 def ensure_user_profile(sender, instance, **kwargs):
-    print("USER SIGNAL LOADED")
     UserProfile.objects.get_or_create(user=instance)
