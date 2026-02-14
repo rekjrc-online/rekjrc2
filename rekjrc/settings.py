@@ -19,14 +19,17 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-default')
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+ALLOWED_HOSTS = [
+    "10.1.1.63",
+    "127.0.0.1",
     'localhost',
     'rekjrc.com',
     'www.rekjrc.com',
-])
+]
 
 INTERNAL_IPS = [
     "127.0.0.1",
+    "10.1.1.63",
 ]
 
 # ------------------------------
@@ -112,6 +115,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://rekjrc.com",
     "https://www.rekjrc.com",
+    "http://10.1.1.63:8000",
+    "http://10.1.1.63:3000",
+    "http://10.1.1.63",
 ]
 
 # ------------------------------

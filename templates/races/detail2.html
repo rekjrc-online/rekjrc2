@@ -1,3 +1,20 @@
+<!-- races/detail2.html -->
+{% if object.race_type == "Judged Event" %}
+    <div class="panel">
+        <h4>Judges</h4>
+        <ol>
+            {% for judge in object.race_judges.all %}
+                <li>{{ judge }} (<a href="{% url 'judged:judge_remove' object.uuid judge.uuid %}">remove</a>)</li>
+            {% empty %}
+                <li>No judges listed</li>
+            {% endfor %}
+        </ol>
+        {% if is_owner %}
+            <p><a href="{% url 'judged:judge_add' object.uuid %}">Add judge</a></p>
+        {% endif %}
+    </div>
+{% endif %}
+
 <div class="panel">
     <h4>Race Entries</h4>
     <ul>

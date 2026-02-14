@@ -29,8 +29,8 @@ class JudgedEventRunScore(BaseModel):
         return f"{self.run.racedriver} - {self.judge} - {self.score:.1f}"
 
 class Judge(BaseModel):
-    race = models.ForeignKey(Race, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='race_judges')
+    race = models.ForeignKey(Race, on_delete=models.CASCADE, related_name='race_judges')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['race', 'user'], name='unique_judge_per_race')]

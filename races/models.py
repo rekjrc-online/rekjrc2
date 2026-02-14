@@ -10,7 +10,6 @@ from teams.models import Team
 from tracks.models import Track
 from stores.models import Store
 import qrcode
-import json
 import os
 
 class Race(BaseModel, Ownable):

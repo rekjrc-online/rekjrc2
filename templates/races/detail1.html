@@ -1,8 +1,10 @@
+<!-- races/detail1.html -->
+{% if is_owner or object.enable_chat %}
 <div class="panel">
     {% if is_owner %}
         {% if object.race_finished %}
             <h2>Race Finished</h2>
-        {% elif racedrivers %}
+        {% else %}
             <form method="get" action="{% url 'races:start' object.uuid %}" style="display: inline;">
                 <button type="submit" class="button">Start Race</button>
             </form><p>
@@ -14,3 +16,4 @@
         </form>
     {% endif %}
 </div>
+{% endif %}

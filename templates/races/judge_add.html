@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/judge_add.html -->
+
+<div class="panel">
+    <center>
+        <h1>Add Judge</h1>
+        <h2>{{ race }}</h2>
+
+        <!-- Hidden form to submit the QR data -->
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="qr_data" id="qr_data">
+            <button type="submit" id="submit_btn" style="display:none;">Submit</button>
+        </form>
+
+        <div id="reader" style="width: 300px;"></div>
+        <p id="status"></p>
+    </center>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+    const status = document.getElementById("status");
+    const qrInput = document.getElementById("qr_data");
+    const submitBtn = document.getElementById("submit_btn");
+
+    function onScanSuccess(decodedText) {
+        let data;
+        try {
+            data = JSON.parse(decodedText);
+        } catch (e) {
+            status.textContent = "Invalid QR code";
+            return;
+        }
+        qrInput.value = decodedText;
+        submitBtn.click();
+    }
+
+    new Html5Qrcode("reader").start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+    );
+</script>
+
+{% endblock %}
