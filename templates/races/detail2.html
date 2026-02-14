@@ -4,7 +4,7 @@
         <h4>Judges</h4>
         <ol>
             {% for judge in object.race_judges.all %}
-                <li>{{ judge }} (<a href="{% url 'judged:judge_remove' object.uuid judge.uuid %}">remove</a>)</li>
+                <li>{{ judge.user.first_name }} {{ judge.user.last_name }} (<a href="{% url 'judged:judge_remove' object.uuid judge.uuid %}">remove</a>)</li>
             {% empty %}
                 <li>No judges listed</li>
             {% endfor %}
