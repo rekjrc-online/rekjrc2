@@ -36,7 +36,7 @@ class JudgeAdd(View):
         if Judge.objects.filter(race=race, user_id=judge_id).exists():
             return HttpResponseBadRequest("Judge already exists for this race.")
         if RaceDriver.objects.filter(race=race, user=request.user).exists():
-            return HttpResponseBadRequest("Cannot judge a race you have already entered.")
+            return HttpResponseBadRequest("<h3>Cannot judge a race you have already entered.</h3>")
         judge = Judge.objects.create(
             race = race,
             user = request.user)
