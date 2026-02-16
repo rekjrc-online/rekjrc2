@@ -1,27 +1,59 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Max
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.db.models import Max, Count, Sum, Exists, OuterRef, Value, FloatField
+from django.db.models.functions import Coalesce
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.views import View
 from crud.views import CrudContextMixin
-from accounts.models import UserProfile
 from posts.models import Post
 from races.models import Race, RaceDriver
-from .models import Judge, JudgedEventRun
+from .models import Judge, JudgedEventRun, JudgedEventRunScore
 import json
-import random
+
+
+class Start_(LoginRequiredMixin, View):
+    template_name = "races/judged_start.html"
+
+    def get(self, request, race_uuid):
+        race = get_object_or_404(Race, uuid=race_uuid)
+        # ---- Race-level ----
+        judges = Judge.objects.filter(race=race).order_by('id')
+        race.is_judge = judges.filter(user=request.user).exists()
+        race.judge_count = judges.count()
+        # ---- Driver-level (everything here) ----
+        racedrivers = (
+            RaceDriver.objects
+            .filter(race=race)
+            .annotate(
+                score_count=Count('judgedeventrun__scores'),
+                score_total=Coalesce(
+                    Sum('judgedeventrun__scores__score'),
+                    Value(0.0),
+                    output_field=FloatField()
+                ),
+                judge_done=Exists(
+                    JudgedEventRunScore.objects.filter(
+                        run__racedriver=OuterRef('pk'),
+                        judge=request.user
+                    )
+                )
+            )
+            .order_by('id')
+        )
+        return render(request, self.template_name, {
+            'race': race,
+            'racedrivers': racedrivers,
+            'judges': judges,
+        })
 
 class JudgeAdd(View):
     template_name = "races/judge_add.html"
 
     def get(self, request, race_uuid):
         race = get_object_or_404(Race, uuid=race_uuid)
-        return render(request, self.template_name, {
-            "race": race,
-        })
+        return render(request, self.template_name, {"race":race})
 
     def post(self, request, *args, **kwargs):
         qr_text = request.POST.get("qr_data")
@@ -31,15 +63,20 @@ class JudgeAdd(View):
             data = json.loads(qr_text)
         except json.JSONDecodeError:
             return HttpResponseBadRequest("Invalid QR code format.")
+        print()
+        print()
+        print("DATA",data)
+        print()
+        print()
         race = get_object_or_404(Race, uuid=self.kwargs["race_uuid"])
         judge_id = data.get("id")
         if Judge.objects.filter(race=race, user_id=judge_id).exists():
             return HttpResponseBadRequest("Judge already exists for this race.")
         if RaceDriver.objects.filter(race=race, user=request.user).exists():
-            return HttpResponseBadRequest("<h3>Cannot judge a race you have already entered.</h3>")
+            return HttpResponseBadRequest("Cannot judge a race you have already entered.")
         judge = Judge.objects.create(
             race = race,
-            user = request.user)
+            user_id = judge_id)
         return redirect("races:detail", uuid=race.uuid)
 
 class JudgeRemove(CrudContextMixin, View):
@@ -47,42 +84,6 @@ class JudgeRemove(CrudContextMixin, View):
         judge = get_object_or_404(Judge, uuid=judge_uuid)
         judge.delete()
         return redirect("races:detail", uuid=race_uuid)
-
-class Start_(LoginRequiredMixin, View):
-    def get(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
-
-        if race.race_finished or race.owner != request.user:
-            return redirect("races:detail", uuid=race.uuid)
-        if JudgedEventRun.objects.filter(race=race).exists():
-            return redirect("dragrace:dragrace", race_uuid=race.uuid)
-
-        race.entry_locked = True
-        race.save(update_fields=["entry_locked"])
-
-        drivers = list(RaceDriver.objects.filter(race=race))
-        random.shuffle(drivers)
-
-        if len(drivers) < 2:
-            return redirect("dragrace:dragrace", race_uuid=race.uuid)
-
-        # Calculate bracket size
-        total_slots = 1
-        while total_slots < len(drivers):
-            total_slots *= 2
-
-        num_byes = total_slots - len(drivers)
-
-        # Build round 1
-        queue = drivers + [None] * num_byes
-        for i in range(0, total_slots, 2):
-            JudgedEventRun.objects.create(
-                race=race,
-                model1=queue[i],
-                model2=queue[i + 1],
-                round_number=1)
-
-        return redirect("dragrace:dragrace", race_uuid=race.uuid)
 
 class Race_(LoginRequiredMixin, View):
     template_name = "races/dragrace.html"

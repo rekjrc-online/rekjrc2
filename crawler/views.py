@@ -12,6 +12,7 @@ import json
 
 class Start_(LoginRequiredMixin, View):
     template_name = 'races/crawler_start.html'
+
     def get(self, request, race_uuid):
         race = get_object_or_404(Race, uuid=race_uuid)
         racedrivers = RaceDriver.objects.filter(race=race).order_by('id')

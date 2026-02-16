@@ -31,7 +31,7 @@ class Start_(View):
             case "Top Speed":
                 return redirect("topspeed:start", race_uuid=race.uuid)
             case "Judged Event":
-                return redirect("judgedevent:start", race_uuid=race.uuid)
+                return redirect("judged:start", race_uuid=race.uuid)
             case _:
                 return redirect("races:detail", uuid=race.uuid)
 

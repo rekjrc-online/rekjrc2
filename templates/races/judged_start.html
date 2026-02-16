@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/judged_start.html -->
+
+<div class="panel">
+    <center><h3>{{ race }}</h3></center>
+
+    <table style="width:100%; text-align:center;">
+        <tr>
+            {% if not race.race_finished and race.is_judge %}
+                <th>Action</th>
+            {% endif %}
+            <th>Driver</th>
+            <th>Model</th>
+            <th>Scores</th>
+            <th>Total</th>
+        </tr>
+
+        {% for d in racedrivers %}
+            <tr>
+                {% if not race.race_finished and race.is_judge %}
+                    <td>
+                        {% if d.judge_done %}
+                            --
+                        {% else %}
+                            <a href="{% url 'judged:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}">
+                                Run
+                            </a>
+                        {% endif %}
+                    </td>
+                {% endif %}
+
+                <td>{{ d.driver }}</td>
+                <td>{{ d.build }}</td>
+
+                <td>
+                    {{ d.score_count }} / {{ race.judge_count }}
+                </td>
+
+                <td>
+                    {{ d.score_total }}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="{% if not race.race_finished and race.is_judge %}5{% else %}4{% endif %}">
+                    No drivers signed up yet.
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    {% if not race.race_finished %}
+        <br />
+
+        <form method="post" action="{% url 'races:lock' uuid=race.uuid %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+                {% if race.entry_locked %}
+                    LOCKED - Unlock Entries
+                {% else %}
+                    Lock Entries
+                {% endif %}
+            </button>
+        </form>
+
+        <br />
+
+        <form method="post" action="{% url 'judged:finish' race_uuid=race.uuid %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">
+                Finish Race
+            </button>
+        </form>
+    {% else %}
+        <center>
+            <h4>- Race is Finished -</h4>
+        </center>
+    {% endif %}
+
+</div>
+{% endblock %}
