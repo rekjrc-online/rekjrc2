@@ -1,0 +1,32 @@
+<div class="post bgmouse" onclick="window.location.href='{{ race.get_absolute_url }}';">
+    <table cellpadding="5" cellspacing="0">
+        <tr>
+            <td valign="top">
+                {% if race.avatar %}
+                <img src="{{ race.avatar.url }}" alt="{{ race.display_name }}" class="menu-avatar-large"/>
+                {% else %}
+                <img src="/static/nophoto_RACE.png" alt="{{ race.display_name }}" class="menu-avatar-large"/>
+                {% endif %}
+            </td>
+            <td valign="top">
+                <strong>{{ race }}</strong>
+                <p>
+                    {{ race.race_type }}
+                    {% if race.location %} | {{ race.location }}{% endif %}
+                    {% if race.track %} | {{ race.track }}{% endif %}
+                </p>
+                {% if race.created_at %}
+                    <p class="muted">
+                        Created {{ race.created_at|date:"M d, Y" }}
+                    </p>
+                {% endif %}
+                {% if race.entry_locked %}
+                    <p><strong>Entries Locked</strong></p>
+                {% endif %}
+                {% if race.race_finished %}
+                    <p><strong>Race Finished</strong></p>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>

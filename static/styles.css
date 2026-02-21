@@ -170,24 +170,6 @@ a:hover {
     height: auto;
 }
 
-/* Responsive */
-@media (max-width: 991px) {
-    .layout-container {
-        grid-template-columns: 1fr !important;
-    }
-
-    .left-col,
-    .right-col {
-        display: none !important;
-    }
-
-    .middle-col {
-        padding: 0;
-        /* optional: reduce padding on small screens */
-        max-width: 100% !important;
-    }
-}
-
 /* Post Metrics */
 .metrics {
     display: flex;
@@ -415,5 +397,20 @@ form button[type="submit"]:hover {
     .form-grid {
         grid-template-columns: 1fr;
         /* collapse to full width */
+    }
+
+    .layout-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .left-col,
+    .right-col {
+        display: none !important;
+    }
+
+    .middle-col {
+        padding: 0;
+        /* optional: reduce padding on small screens */
+        max-width: 100% !important;
     }
 }

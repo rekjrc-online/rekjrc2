@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="panel">
+    <center><h3>Advanced – {{ object.display_name }}</h3></center>
+</div>
+
+<div class="panel">
+    <h4>Members</h4>
+    {% for member in object.members.all %}
+        <div>
+            {{ member.user }} -
+            <a href="{% url 'teams:member-remove' object.uuid member.id %}">remove</a>
+        </div>
+    {% empty %}
+        <em>No members</em> -
+    {% endfor %}
+    <a href="{% url 'teams:member-add' object.uuid %}" class="button">Add member</a>
+</div>
+
+{% endblock %}

@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 {% load race_filters %}
-<!-- crud/detail.html -->
+<!-- teams/detail.html -->
 
 <div class="panel">
   <h3>
     {% if object.avatar %}
       <img src="{{ object.avatar.url }}" alt="{{ object.display_name }}" class="menu-avatar-large"/>
     {% else %}
-      <img src="/static/nophoto_{{ model_name|upper }}.png" alt="{{ object.display_name }}" class="menu-avatar-large"/>
+      <img src="/static/nophoto_TEAM.png" alt="{{ object.display_name }}" class="menu-avatar-large"/>
     {% endif %}
     {{ object }}
   </h3>
@@ -19,12 +19,8 @@
     {% for label, value in field_values %}
       {% if value and label != "is active" and label != "avatar" %}
         <tr>
-          <td align="left">
-            <strong>{{ label|title }}</strong>
-          </td>
-          <td align="left">
-            {{ value }}
-          </td>
+          <td align="left"><strong>{{ label|title }}</strong></td>
+          <td align="left">{{ value }}</td>
         </tr>
       {% endif %}
     {% endfor %}
@@ -38,20 +34,29 @@
           <hr />
           Owner functions:
           <a href="edit" class="button">Edit</a>,
-          {% if object.has_advanced %}
-            <a href="delete" class="button button-danger">Delete</a>,
-            <a href="advanced" class="button">Advanced</a>
-          {% else %}
-            <a href="delete" class="button button-danger">Delete</a>
-          {% endif %}
+          <a href="delete" class="button button-danger">Delete</a>
         </td>
       </tr>
     {% endif %}
   </table>
 </div>
 
-{% if model_name == "event" %}
-  {% include "events/detail.html" %}
-{% endif %}
+<div class="panel">
+  <h4>Members</h4>
+  {% for member in object.members.all %}
+    <div>
+      {{ member.user.get_full_name|default:member.user.username }}
+      {% if is_owner %}
+        - <a href="{% url 'teams:member-remove' object.uuid member.id %}">remove</a>
+      {% endif %}
+    </div>
+  {% empty %}
+    <em>No members yet</em>
+  {% endfor %}
+  {% if is_owner %}
+    <br />
+    <a href="{% url 'teams:member-add' object.uuid %}" class="button">Add Member</a>
+  {% endif %}
+</div>
 
 {% endblock %}

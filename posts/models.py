@@ -1,4 +1,4 @@
-from tkinter import Image
+from PIL import Image
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings

@@ -17,13 +17,12 @@ class CrudContextMixin:
         "created_at",
         "updated_at",
         "entry_locked",
-        "race_finished",
-    ]
+        "race_finished", ]
 
     bottom_fields = [
         'is_active',
         'allow_followers',
-        'enable_chat' ]
+        'enable_chat', ]
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -50,12 +49,7 @@ class CrudContextMixin:
                     continue
                 value = getattr(obj, field.name)
                 if isinstance(field, ForeignKey) and value:
-                    related_fields = [
-                        (f.verbose_name, getattr(value, f.name))
-                        for f in value._meta.fields
-                        if f.name not in ("id", "uuid")
-                    ]
-                    field_values.append((field.verbose_name, related_fields))
+                    field_values.append((field.verbose_name, str(value)))
                 else:
                     field_values.append((field.verbose_name, value))
             for field_name in self.bottom_fields:
@@ -72,3 +66,10 @@ class CrudContextMixin:
         if any(f.name == "owner" for f in model._meta.fields):
             instance.owner = self.request.user
         return super().form_valid(form)
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        model = self.model
+        if any(f.name == "owner" for f in model._meta.fields):
+            qs = qs.filter(owner=self.request.user)
+        return qs

@@ -17,9 +17,9 @@ class LongJumpRun(BaseModel):
     def display_distance(self):
         if self.feet is not None and self.inches is not None:
             return f"{self.feet}ft {self.inches}in"
-        return "None"
+        return "No distance recorded"
 
     def __str__(self):
         if self.feet is not None and self.inches is not None:
             return f"{self.racedriver} - {self.feet}ft {self.inches}in"
-        return f"{self.racedriver} - None"
+        return f"{self.racedriver} - No distance recorded"

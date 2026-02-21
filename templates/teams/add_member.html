@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- teams/add_member.html -->
+
+<div class="panel" style="text-align:center;">
+    <h3>Add Team Member</h3>
+</div>
+
+<div class="panel" style="text-align:center; margin-bottom:20px;">
+    <h3>Scan Member QR Code</h3>
+    <div id="qr-reader" style="width:100%; max-width:400px; margin:auto;"></div>
+    <p id="qr-result">Waiting for scan…</p>
+</div>
+
+<form id="member-form" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="profile_uuid" id="profile_uuid">
+</form>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    function onScanSuccess(decodedText) {
+        try {
+            const data = JSON.parse(decodedText);
+
+            document.getElementById("profile_uuid").value = data.uuid;
+            document.getElementById("qr-result").innerText =
+                `Scanned: ${data.username}`;
+
+            html5Qrcode
+                .stop()
+                .then(() => document.getElementById("member-form").submit());
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById("qr-result").innerText =
+                "Invalid QR code";
+        }
+    }
+
+    function onScanError(_) {
+        // ignore scan noise
+    }
+
+    const html5Qrcode = new Html5Qrcode("qr-reader");
+
+    html5Qrcode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        onScanError
+    );
+
+});
+</script>
+
+{% endblock %}

@@ -23,7 +23,7 @@
                         {% if d.judge_done %}
                             --
                         {% else %}
-                            <a href="{% url 'judged:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}">
+                            <a href="{% url 'judged:judge' race_uuid=race.uuid racedriver_id=d.id %}">
                                 Run
                             </a>
                         {% endif %}

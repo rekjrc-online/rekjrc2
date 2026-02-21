@@ -2,22 +2,26 @@
 {% block content %}
 <!-- races/judge_add.html -->
 
-<div class="panel">
-    <center>
-        <h1>Add Judge</h1>
-        <h2>{{ race }}</h2>
-        <!-- Hidden form to submit the QR data -->
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="qr_data" id="qr_data">
-            <button type="submit" id="submit_btn" style="display:none;">Submit</button>
-        </form>
-        <div id="reader" style="width: 100%; height: 100%;"></div>
-        <p id="status"></p>
-        <br />
-        <h2>Tell them to go here</h2>
-        <img src="/static/rekjrc_accounts_qr.png" style="width: 100%; height: 100%;" />
-    </center>
+<div class="panel" style="text-align: center;">
+    <h1>{{ race }}</h1>
+</div>
+
+<div class="panel" style="text-align: center;">
+    <h2>Add Judge</h2>
+    <!-- Hidden form to submit the QR data -->
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="qr_data" id="qr_data">
+        <button type="submit" id="submit_btn" style="display:none;">Submit</button>
+    </form>
+    <div id="reader" style="width: 100%; height: 100%;"></div>
+    <p id="status"></p>
+</div>
+
+<div class="panel" style="text-align: center;">
+    <h2>Tell them to go here</h2>
+    <a href="https://rekjrc.com/accounts/">https://rekjrc.com/accounts/</a>
+    <img src="/static/rekjrc_accounts_qr.png" style="width: 100%; height: 100%;" />
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>

@@ -11,9 +11,8 @@ import random
 
 class Start_(LoginRequiredMixin, View):
     def get(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
-
-        if race.race_finished or race.owner != request.user:
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
+        if race.race_finished:
             return redirect("races:detail", uuid=race.uuid)
         if DragRace.objects.filter(race=race).exists():
             return redirect("dragrace:dragrace", race_uuid=race.uuid)
@@ -49,7 +48,7 @@ class DragRace_(LoginRequiredMixin, View):
     template_name = "races/dragrace.html"
 
     def get(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         rounds = (DragRace.objects.filter(race=race).order_by("round_number", "id"))
         final_winner = None
         if rounds.exists():
@@ -78,16 +77,14 @@ class DragRace_(LoginRequiredMixin, View):
     # POST — save match winners only
     # --------------------------------------------------
     def post(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
-
-        if race.race_finished or race.owner != request.user:
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
+        if race.race_finished:
             return redirect("races:detail", uuid=race.uuid)
 
         for match in DragRace.objects.filter(race=race):
             winner_id = request.POST.get(f"winner_{match.id}")
             if not winner_id:
                 continue
-
             winner = RaceDriver.objects.filter(id=winner_id).first()
             if winner:
                 match.winner = winner
@@ -100,9 +97,8 @@ class Finish_(LoginRequiredMixin, View):
 
     @transaction.atomic
     def post(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
-
-        if race.race_finished or race.owner != request.user:
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
+        if race.race_finished:
             return redirect("races:detail", uuid=race.uuid)
 
         rounds = DragRace.objects.filter(race=race)
@@ -113,7 +109,6 @@ class Finish_(LoginRequiredMixin, View):
 
         final_round = rounds.filter(round_number=max_round)
 
-        # Must be exactly one final match
         if final_round.count() != 1:
             return redirect("dragrace:dragrace", race_uuid=race.uuid)
 
@@ -134,9 +129,6 @@ class Finish_(LoginRequiredMixin, View):
 
         final_winner = final_match.winner
 
-        # --------------------------------------------------
-        # Build results content
-        # --------------------------------------------------
         lines = [
             "🏁 Winner 🏁",
             f"Driver: {final_winner.driver}",
@@ -161,9 +153,6 @@ class Finish_(LoginRequiredMixin, View):
 
         content = "\r\n".join(lines)
 
-        # --------------------------------------------------
-        # Create Post (GenericForeignKey)
-        # --------------------------------------------------
         Post.objects.create(
             author_content_type=ContentType.objects.get_for_model(Race),
             author_object_id=race.id,

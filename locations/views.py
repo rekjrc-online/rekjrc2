@@ -1,29 +1,27 @@
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from crud.views import CrudContextMixin
+from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Location, LocationTrack
 from .forms import LocationForm
 
-class List_(CrudContextMixin, ListView):
+class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Location
     template_name = "crud/list.html"
-    def get_queryset(self):
-        return self.model.objects.filter(owner=self.request.user)
 
-class Detail_(CrudContextMixin, DetailView):
+class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Location
     template_name = "crud/detail.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Create_(CrudContextMixin, CreateView):
+class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Location
     fields = "__all__"
     action = "Create"
     template_name = "crud/form.html"
 
-class Update_(CrudContextMixin, UpdateView):
+class Update_(CrudAuthMixin, CrudContextMixin, UpdateView):
     model = Location
     fields = "__all__"
     action = "Edit"
@@ -31,20 +29,20 @@ class Update_(CrudContextMixin, UpdateView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Delete_(CrudContextMixin, DeleteView):
+class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = Location
     template_name = "crud/confirm_delete.html"
     success_url = "/locations/"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Advanced_(CrudContextMixin, DetailView):
+class Advanced_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Location
     template_name = "locations/advanced.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class LocationTrackAdd_(CrudContextMixin, CreateView):
+class LocationTrackAdd_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = LocationTrack
     fields = ["track"]
     template_name = "crud/form.html"
@@ -59,7 +57,7 @@ class LocationTrackAdd_(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("locations:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class LocationTrackRemove_(CrudContextMixin, DeleteView):
+class LocationTrackRemove_(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = LocationTrack
     template_name = "crud/confirm_delete.html"
     slug_field = "uuid"

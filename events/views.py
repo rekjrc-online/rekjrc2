@@ -1,28 +1,26 @@
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from crud.views import CrudContextMixin
+from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace
 from django.shortcuts import get_object_or_404, redirect
 
-class List_(CrudContextMixin, ListView):
+class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Event
     template_name = "crud/list.html"
-    def get_queryset(self):
-        return self.model.objects.filter(owner=self.request.user)
 
-class Detail_(CrudContextMixin, DetailView):
+class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Event
     template_name = "crud/detail.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Create_(CrudContextMixin, CreateView):
+class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Event
     fields = "__all__"
     action = "Create"
     template_name = "crud/form.html"
 
-class Update_(CrudContextMixin, UpdateView):
+class Update_(CrudAuthMixin, CrudContextMixin, UpdateView):
     model = Event
     fields = "__all__"
     action = "Edit"
@@ -30,20 +28,20 @@ class Update_(CrudContextMixin, UpdateView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Delete_(CrudContextMixin, DeleteView):
+class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = Event
     template_name = "crud/confirm_delete.html"
     success_url = "/events/"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Advanced_(CrudContextMixin, DetailView):
+class Advanced_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Event
     template_name = "events/advanced.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class EventClubAdd(CrudContextMixin, CreateView):
+class EventClubAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = EventClub
     fields = ["club"]
     template_name = "crud/form.html"
@@ -58,7 +56,7 @@ class EventClubAdd(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("events:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class EventClubRemove(CrudContextMixin, DeleteView):
+class EventClubRemove(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = EventClub
     template_name = "crud/confirm_delete.html"
     model_name = "Event Club"
@@ -70,7 +68,7 @@ class EventClubRemove(CrudContextMixin, DeleteView):
         event = get_object_or_404(Event, uuid=self.kwargs["uuid"])
         return get_object_or_404(EventClub, id=self.kwargs["id"], event=event)
 
-class EventLocationAdd(CrudContextMixin, CreateView):
+class EventLocationAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = EventLocation
     fields = ["location"]
     template_name = "crud/form.html"
@@ -85,7 +83,7 @@ class EventLocationAdd(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("events:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class EventLocationRemove(CrudContextMixin, DeleteView):
+class EventLocationRemove(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = EventLocation
     template_name = "crud/confirm_delete.html"
     model_name = "Event Location"
@@ -97,7 +95,7 @@ class EventLocationRemove(CrudContextMixin, DeleteView):
         event = get_object_or_404(Event, uuid=self.kwargs["uuid"])
         return get_object_or_404(EventLocation, id=self.kwargs["id"], event=event)
 
-class EventRaceAdd(CrudContextMixin, CreateView):
+class EventRaceAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = EventRace
     fields = ["race"]
     template_name = "crud/form.html"
@@ -112,7 +110,7 @@ class EventRaceAdd(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("events:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class EventRaceRemove(CrudContextMixin, DeleteView):
+class EventRaceRemove(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = EventRace
     template_name = "crud/confirm_delete.html"
     model_name = "Event Race"
@@ -124,7 +122,7 @@ class EventRaceRemove(CrudContextMixin, DeleteView):
         event = get_object_or_404(Event, uuid=self.kwargs["uuid"])
         return get_object_or_404(EventRace, id=self.kwargs["id"], event=event)
 
-class EventStoreAdd(CrudContextMixin, CreateView):
+class EventStoreAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = EventStore
     fields = ["store"]
     template_name = "crud/form.html"
@@ -139,7 +137,7 @@ class EventStoreAdd(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("events:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class EventStoreRemove(CrudContextMixin, DeleteView):
+class EventStoreRemove(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = EventStore
     template_name = "crud/confirm_delete.html"
     model_name = "Event Store"
@@ -151,7 +149,7 @@ class EventStoreRemove(CrudContextMixin, DeleteView):
         event = get_object_or_404(Event, uuid=self.kwargs["uuid"])
         return get_object_or_404(EventStore, id=self.kwargs["id"], event=event)
 
-class EventTeamAdd(CrudContextMixin, CreateView):
+class EventTeamAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = EventTeam
     fields = ["team"]
     template_name = "crud/form.html"
@@ -166,7 +164,7 @@ class EventTeamAdd(CrudContextMixin, CreateView):
     def get_success_url(self):
         return reverse("events:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class EventTeamRemove(CrudContextMixin, DeleteView):
+class EventTeamRemove(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = EventTeam
     template_name = "crud/confirm_delete.html"
     model_name = "Event Team"

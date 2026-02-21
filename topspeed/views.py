@@ -10,7 +10,7 @@ from .models import TopSpeedRun
 class Start_(LoginRequiredMixin, View):
     template_name = 'races/topspeed_start.html'
     def get(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         racedrivers = RaceDriver.objects.filter(race=race).order_by('id')
         for racedriver in racedrivers:
             racedriver.run = TopSpeedRun.objects.filter(race=race, racedriver=racedriver).first()
@@ -22,7 +22,7 @@ class Race_(LoginRequiredMixin, View):
     template_name = "races/topspeed_race.html"
 
     def get(self, request, race_uuid, racedriver_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.race_finished==True:
             return HttpResponseForbidden("This race is already finished.")
         racedriver = get_object_or_404(RaceDriver, uuid=racedriver_uuid)
@@ -33,7 +33,7 @@ class Race_(LoginRequiredMixin, View):
             'run': run })
 
     def post(self, request, race_uuid, racedriver_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.owner != request.user:
             return HttpResponseForbidden("You are not allowed to submit times for this race.")
         if race.race_finished==True:
@@ -55,7 +55,7 @@ class Race_(LoginRequiredMixin, View):
 
 class Finish_(LoginRequiredMixin, View):
     def post(self, request, race_uuid, *args, **kwargs):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.owner != request.user:
             return HttpResponseForbidden("You are not allowed to finish this race.")
         if race.race_finished==True:

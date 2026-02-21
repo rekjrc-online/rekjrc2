@@ -14,7 +14,7 @@ class Start_(LoginRequiredMixin, View):
     template_name = 'races/crawler_start.html'
 
     def get(self, request, race_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         racedrivers = RaceDriver.objects.filter(race=race).order_by('id')
         for racedriver in racedrivers:
             racedriver.run = CrawlerRun.objects.filter(race=race, racedriver=racedriver).first()
@@ -26,7 +26,7 @@ class Crawl_(LoginRequiredMixin, View):
     template_name = "races/crawler_crawl.html"
 
     def get(self, request, race_uuid, racedriver_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.race_finished==True:
             return redirect("crawler:start", race_uuid=race.uuid)
         racedriver = get_object_or_404(RaceDriver, uuid=racedriver_uuid)
@@ -37,7 +37,7 @@ class Crawl_(LoginRequiredMixin, View):
             'run': run })
 
     def post(self, request, race_uuid, racedriver_uuid):
-        race = get_object_or_404(Race, uuid=race_uuid)
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.race_finished==True:
             return redirect("crawler:start", race_uuid=race.uuid)
         racedriver = get_object_or_404(RaceDriver, uuid=racedriver_uuid)
@@ -74,9 +74,7 @@ class Crawl_(LoginRequiredMixin, View):
 
 class Finish_(LoginRequiredMixin, View):
     def post(self, request, race_uuid, *args, **kwargs):
-        race = get_object_or_404(Race, uuid=race_uuid)
-        if race.owner != request.user:
-            return HttpResponseForbidden("You are not allowed to finish this race.")
+        race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.race_finished==True:
             return HttpResponseForbidden("Race is already finished.")
         runs = CrawlerRun.objects.filter(race=race).select_related('racedriver', 'racedriver__driver', 'racedriver__build')

@@ -4,34 +4,32 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from accounts.models import UserProfile
-from crud.views import CrudContextMixin
+from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Club, ClubLocation, ClubMember, ClubTeam
 
-class Advanced_(CrudContextMixin, DetailView):
+class Advanced_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Club
     template_name = "clubs/advanced.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class List_(CrudContextMixin, ListView):
+class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Club
     template_name = "crud/list.html"
-    def get_queryset(self):
-        return self.model.objects.filter(owner=self.request.user)
 
-class Detail_(CrudContextMixin, DetailView):
+class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Club
     template_name = "crud/detail.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Create_(CrudContextMixin, CreateView):
+class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Club
     fields = "__all__"
     action = "Create"
     template_name = "crud/form.html"
 
-class Update_(CrudContextMixin, UpdateView):
+class Update_(CrudAuthMixin, CrudContextMixin, UpdateView):
     model = Club
     fields = "__all__"
     action = "Edit"
@@ -39,28 +37,29 @@ class Update_(CrudContextMixin, UpdateView):
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class Delete_(CrudContextMixin, DeleteView):
+class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = Club
     template_name = "crud/confirm_delete.html"
     success_url = "/clubs/"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
 
-class ClubLocationAdd(CrudContextMixin, CreateView):
+class ClubLocationAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = ClubLocation
     fields = ["location"]
     template_name = "crud/form.html"
     action = "Add"
     model_name = "Club Location"
     def form_valid(self, form):
-        club = get_object_or_404(Club, uuid=self.kwargs["uuid"])
+        club = get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
         form.instance.club = club
         return super().form_valid(form)
     def get_success_url(self):
         return reverse("clubs:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class ClubLocationRemove(CrudContextMixin, View):
+class ClubLocationRemove(CrudAuthMixin, CrudContextMixin, View):
     def get(self, request, uuid, club_location_id):
+        club = get_object_or_404(Club, uuid=uuid, owner=self.request.user)
         cl = get_object_or_404(
             ClubLocation,
             id=club_location_id,
@@ -68,13 +67,13 @@ class ClubLocationRemove(CrudContextMixin, View):
         cl.delete()
         return redirect("clubs:advanced", uuid=uuid)
 
-class ClubMemberAdd(CreateView):
+class ClubMemberAdd(CrudAuthMixin, CreateView):
     model = ClubMember
     fields = [ ]
     template_name = "clubs/add_member.html"
 
     def form_valid(self, form):
-        club = get_object_or_404(Club, uuid=self.kwargs["uuid"])
+        club = get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
         profile_uuid = self.request.POST.get("profile_uuid")
         profile = get_object_or_404(UserProfile, uuid=profile_uuid)
         if ClubMember.objects.filter(club=club,user=profile.user).exists():
@@ -86,8 +85,9 @@ class ClubMemberAdd(CreateView):
     def get_success_url(self):
         return reverse("clubs:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class ClubMemberRemove(CrudContextMixin, View):
+class ClubMemberRemove(CrudAuthMixin, CrudContextMixin, View):
     def get(self, request, uuid, club_member_id):
+        club = get_object_or_404(Club, uuid=uuid, owner=request.user)
         member = get_object_or_404(
             ClubMember,
             id=club_member_id,
@@ -95,19 +95,20 @@ class ClubMemberRemove(CrudContextMixin, View):
         member.delete()
         return redirect("clubs:advanced", uuid=uuid)
 
-class ClubTeamAdd(CrudContextMixin, CreateView):
+class ClubTeamAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = ClubTeam
     fields = ["team"]
     template_name = "crud/form.html"
     def form_valid(self, form):
-        club = get_object_or_404(Club, uuid=self.kwargs["uuid"])
+        club = get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
         form.instance.club = club
         return super().form_valid(form)
     def get_success_url(self):
         return reverse("clubs:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 
-class ClubTeamRemove(CrudContextMixin, View):
+class ClubTeamRemove(CrudAuthMixin, CrudContextMixin, View):
     def get(self, request, uuid, club_team_id):
+        club = get_object_or_404(Club, uuid=uuid, owner=request.user)
         ct = get_object_or_404(
             ClubTeam,
             id=club_team_id,

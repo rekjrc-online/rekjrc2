@@ -64,6 +64,12 @@ class Race(BaseModel, Ownable):
         related_name='races',
         null=True,
         blank=True)
+    judge_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        related_name='judge_races',
+        null=True,
+        blank=True)
     store = models.ForeignKey(
         Store,
         on_delete=models.SET_NULL,
@@ -86,7 +92,6 @@ class Race(BaseModel, Ownable):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         qr_data = f"https://www.rekjrc.com/races/{self.uuid}/join".strip()
-        print(repr(qr_data))
         qr = qrcode.QRCode(
             version=None,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -136,6 +141,13 @@ class Race(BaseModel, Ownable):
         os.makedirs(qr_folder, exist_ok=True)
         qr_path = os.path.join(qr_folder, f"{self.uuid}.png")
         final_img.save(qr_path)
+
+    @classmethod
+    def for_user(cls, user):
+        from django.db.models import Q
+        return cls.objects.filter(
+            Q(owner=user) | Q(judge_team__members__user=user)
+        )
 
 class RaceDriver(BaseModel):
     race = models.ForeignKey(

@@ -24,15 +24,8 @@ class UserProfile(models.Model):
         super().save(*args, **kwargs)
 
         qr_payload = {
-            "id": self.user.id,
             "uuid": str(self.uuid),
-            "username": self.user.username,
-            "email": self.user.email,
-            "first_name": self.user.first_name,
-            "last_name": self.user.last_name,
-            "phone": self.phone_number,
-            "verified": self.is_verified,
-            "sms_opt_in": self.sms_opt_in }
+            "type": "user" }
         qr_data = json.dumps(qr_payload)
         qr = qrcode.QRCode(
             version=None,

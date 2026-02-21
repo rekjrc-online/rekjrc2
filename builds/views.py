@@ -2,13 +2,11 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Build
 
-class List_(CrudContextMixin, ListView):
+class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Build
     template_name = "crud/list.html"
-    def get_queryset(self):
-        return self.model.objects.filter(owner=self.request.user)
 
-class Detail_(CrudContextMixin, DetailView):
+class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Build
     template_name = "crud/detail.html"
     slug_field = "uuid"

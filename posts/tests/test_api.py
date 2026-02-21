@@ -71,18 +71,13 @@ class PostApiTests(TestCase):
         self.client.force_authenticate(user=None)
         url = reverse("posts_api:list")
         response = self.client.get(url, format="json")
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertGreaterEqual(len(data), 1)
-        contents = [item["content"] for item in data]
-        self.assertIn("First post", contents)
+        self.assertEqual(response.status_code, 403)
 
     def test_inactive_driver_not_in_related_posts(self):
         post = Post.objects.create(
             content="Inactive driver post",
             author_content_type=ContentType.objects.get_for_model(self.inactive_driver),
-            author_object_id=self.inactive_driver.pk,
-        )
+            author_object_id=self.inactive_driver.pk)
         from posts.api.views import RelatedPostsAPIView
         view = RelatedPostsAPIView()
         view.model_class = Driver

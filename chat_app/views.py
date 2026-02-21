@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -47,7 +48,7 @@ def resolve_channel(model_type, object_uuid):
     return obj, ContentType.objects.get_for_model(model)
 
 
-class ChatRoomView(TemplateView):
+class ChatRoomView(LoginRequiredMixin, TemplateView):
     template_name = "chat/room.html"
 
     def get_context_data(self, **kwargs):
@@ -76,7 +77,7 @@ class ChatRoomView(TemplateView):
         return context
 
 
-class ChatMessagesView(View):
+class ChatMessagesView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         obj, ct = resolve_channel(
             kwargs["model_type"],
@@ -112,7 +113,7 @@ class ChatMessagesView(View):
         )
 
 
-class ChatSendView(View):
+class ChatSendView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         obj, ct = resolve_channel(
             kwargs["model_type"],
