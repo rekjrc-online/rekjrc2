@@ -7,7 +7,7 @@
         <img src="{{ post.author.avatar.url }}" alt="{{ post.author.display_name }}" class="avatar" />
       </a>
     {% else %}
-      <img src="/static/nophoto_{{ post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+      <img src="/static/nophoto_{{ post.author_content_type.model|upper }}.png" alt="Avatar" class="avatar" />
     {% endif %}
 
     <div class="post-right-content" style="flex: 1">

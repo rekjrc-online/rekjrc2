@@ -18,7 +18,7 @@ class LocationModelTests(TestCase):
             owner=self.user,
             is_active=True
         )
-        self.assertEqual(str(loc), "Test Track (45.123456, -73.654321)")
+        self.assertEqual(str(loc), "Test Track")
         self.assertTrue(loc.is_active)
 
     def test_invalid_latitude_raises(self):
@@ -60,7 +60,7 @@ class LocationFormTests(TestCase):
         loc.owner = self.user
         loc.save()
         self.assertEqual(Location.objects.count(), 1)
-        self.assertEqual(str(loc), "Form Track (40.123456, -70.654321)")
+        self.assertEqual(str(loc), "Form Track")
 
     def test_form_invalid_latitude(self):
         form_data = {

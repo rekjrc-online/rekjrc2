@@ -6,6 +6,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from accounts.models import UserProfile
 from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Club, ClubLocation, ClubMember, ClubTeam
+from .forms import ClubLocationForm
 
 class Advanced_(CrudAuthMixin, CrudContextMixin, DetailView):
     model = Club
@@ -46,14 +47,56 @@ class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
 
 class ClubLocationAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     model = ClubLocation
-    fields = ["location"]
+    form_class = ClubLocationForm
     template_name = "crud/form.html"
     action = "Add"
     model_name = "Club Location"
+
+    def get_club(self):
+        return get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["club"] = self.get_club()
+        return kwargs
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        club = self.get_club()
+
+        # Locations owned by the user
+        from locations.models import Location
+        from django.db.models import Q
+        user_location_ids = Location.objects.filter(
+            owner=self.request.user
+        ).values_list("id", flat=True)
+
+        # Locations owned by members of any team attached to this club
+        team_member_location_ids = Location.objects.filter(
+            owner__team_memberships__team__teams__club=club
+        ).values_list("id", flat=True)
+
+        # Locations owned by club members directly
+        member_location_ids = Location.objects.filter(
+            owner__club_memberships__club=club
+        ).values_list("id", flat=True)
+
+        # Exclude locations already attached to this club
+        already_added = club.locations.values_list("location_id", flat=True)
+
+        allowed = Location.objects.filter(
+            Q(id__in=user_location_ids) |
+            Q(id__in=team_member_location_ids) |
+            Q(id__in=member_location_ids)
+        ).exclude(id__in=already_added).distinct()
+
+        form.fields["location"].queryset = allowed
+        return form
+
     def form_valid(self, form):
-        club = get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
-        form.instance.club = club
+        form.instance.club = self.get_club()
         return super().form_valid(form)
+
     def get_success_url(self):
         return reverse("clubs:advanced", kwargs={"uuid": self.kwargs["uuid"]})
 

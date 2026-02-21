@@ -21,8 +21,6 @@ class Location(BaseModel, Ownable):
         indexes = [models.Index(fields=["latitude", "longitude"])]
 
     def __str__(self):
-        if self.latitude is not None and self.longitude is not None:
-            return f"{self.display_name} ({self.latitude}, {self.longitude})"
         return self.display_name
 
     def get_absolute_url(self):
