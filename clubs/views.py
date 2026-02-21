@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from accounts.models import UserProfile
+from accounts.models import User
 from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Club, ClubLocation, ClubMember, ClubTeam
 from .forms import ClubLocationForm
@@ -117,11 +117,11 @@ class ClubMemberAdd(CrudAuthMixin, CreateView):
 
     def form_valid(self, form):
         club = get_object_or_404(Club, uuid=self.kwargs["uuid"], owner=self.request.user)
-        profile_uuid = self.request.POST.get("profile_uuid")
-        profile = get_object_or_404(UserProfile, uuid=profile_uuid)
-        if ClubMember.objects.filter(club=club,user=profile.user).exists():
+        user_uuid = self.request.POST.get("profile_uuid")
+        user = get_object_or_404(User, uuid=user_uuid)
+        if ClubMember.objects.filter(club=club,user=user).exists():
             return redirect(self.get_success_url())
-        form.instance.user = profile.user
+        form.instance.user = user
         form.instance.club = club
         return super().form_valid(form)
 

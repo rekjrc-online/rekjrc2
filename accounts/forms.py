@@ -1,10 +1,8 @@
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
 from django import forms
-from .models import UserProfile
 
 User = get_user_model()
-
 
 class RegisterForm(UserCreationForm):
     # Explicitly remove the username field that UserCreationForm declares at class level
@@ -28,29 +26,15 @@ class RegisterForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.username = self.cleaned_data["email"]  # already lowercased by clean_email
+        user.phone_number = self.cleaned_data.get("phone_number", "")
         if commit:
             user.save()
-        phone = self.cleaned_data.get("phone_number", "")
-        user.profile.phone_number = phone
-        if commit:
-            user.profile.save()
         return user
 
-
 class UserEditForm(forms.ModelForm):
-    phone_number = forms.CharField(required=False, label="Phone Number")
-    sms_opt_in = forms.BooleanField(required=False, label="SMS Opt-In")
-
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email"]
-
-    def __init__(self, *args, **kwargs):
-        user = kwargs.get("instance")
-        super().__init__(*args, **kwargs)
-        if user and hasattr(user, "profile"):
-            self.fields["phone_number"].initial = user.profile.phone_number
-            self.fields["sms_opt_in"].initial = user.profile.sms_opt_in
+        fields = ["first_name", "last_name", "email", "phone_number", "sms_opt_in"]
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()
@@ -64,20 +48,9 @@ class UserEditForm(forms.ModelForm):
         user.username = user.email  # already lowercased by clean_email
         if commit:
             user.save()
-        profile = user.profile
-        profile.phone_number = self.cleaned_data.get("phone_number")
-        profile.sms_opt_in = self.cleaned_data.get("sms_opt_in")
-        if commit:
-            profile.save()
         return user
 
-
 class EmailAuthForm(AuthenticationForm):
-    """
-    Login form that uses email instead of username.
-    Declared at class level to guarantee the label regardless of Django version.
-    """
-
     username = forms.EmailField(
         label="Email",
         widget=forms.EmailInput(attrs={"placeholder": "you@example.com", "autofocus": True}))

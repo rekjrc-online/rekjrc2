@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from accounts.models import UserProfile
+from accounts.models import User
 from crud.views import CrudContextMixin, CrudAuthMixin
 from .models import Team, TeamMember
 
@@ -55,11 +55,11 @@ class TeamMemberAdd(CrudAuthMixin, CreateView):
 
     def form_valid(self, form):
         team = get_object_or_404(Team, uuid=self.kwargs["uuid"], owner=self.request.user)
-        profile_uuid = self.request.POST.get("profile_uuid")
-        profile = get_object_or_404(UserProfile, uuid=profile_uuid)
-        if TeamMember.objects.filter(team=team, user=profile.user).exists():
+        user_uuid = self.request.POST.get("profile_uuid")
+        user = get_object_or_404(User, uuid=user_uuid)
+        if TeamMember.objects.filter(team=team, user=user).exists():
             return redirect(self.get_success_url())
-        form.instance.user = profile.user
+        form.instance.user = user
         form.instance.team = team
         return super().form_valid(form)
 
