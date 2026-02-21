@@ -6,7 +6,9 @@
 <div class="panel">
   <h3>
     {% if object.avatar %}
-      <img src="{{ object.avatar.url }}" alt="{{ object.display_name }}" class="menu-avatar-large"/>
+      <a href="{{ object.avatar.url }}">
+        <img src="{{ object.avatar.url }}" alt="{{ object.display_name }}" class="menu-avatar-large"/>
+      </a>
     {% else %}
       <img src="/static/nophoto_{{ model_name|upper }}.png" alt="{{ object.display_name }}" class="menu-avatar-large"/>
     {% endif %}

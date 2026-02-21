@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -10,22 +10,50 @@ import qrcode
 import json
 import os
 
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Email is required")
+        email = self.normalize_email(email).lower()
+        user = self.model(email=email, username=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        return self.create_user(email, password, **extra_fields)
+
+
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["first_name", "last_name"]
+
+    objects = UserManager()
+
+    def __str__(self):
+        return self.email
+
+
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     uuid = models.UUIDField(default=uuid_lib.uuid4, unique=True, editable=False)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     is_verified = models.BooleanField(default=False)
     sms_opt_in = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.user.username} Profile"
+        return f"{self.user.email} Profile"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
         qr_payload = {
             "uuid": str(self.uuid),
-            "type": "user" }
+            "type": "user"}
         qr_data = json.dumps(qr_payload)
         qr = qrcode.QRCode(
             version=None,
@@ -44,58 +72,51 @@ class UserProfile(models.Model):
         except IOError:
             font = ImageFont.load_default()
 
-        # Get font metrics
         ascent, descent = font.getmetrics()
 
-        # Measure each line
         line_widths = []
         line_heights = []
         for line in header_lines:
             bbox = font.getbbox(line)
             width = bbox[2] - bbox[0]
-            # Use ascent + descent as line height to avoid clipping
             height = ascent + descent
             line_widths.append(width)
             line_heights.append(height)
 
         text_width = max(line_widths)
-        text_height_total = sum(line_heights) + (len(header_lines)-1) * 5  # 5 px spacing
+        text_height_total = sum(line_heights) + (len(header_lines)-1) * 5
 
-        # Measure each line using Pillow ≥10 API
         line_sizes = [font.getbbox(line) for line in header_lines]
         line_widths = [bbox[2] - bbox[0] for bbox in line_sizes]
         line_heights = [bbox[3] - bbox[1] for bbox in line_sizes]
 
         text_width = max(line_widths)
-        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5  # 5 px spacing
+        text_height_total = sum(line_heights) + (len(header_lines) - 1) * 5
 
-        # --- 5. Create final image with header space ---
         padding = 10
         total_width = max(qr_img.width, text_width + 2*padding)
-        total_height = qr_img.height + text_height_total + 2*padding + 5  # extra bottom padding
+        total_height = qr_img.height + text_height_total + 2*padding + 5
 
         final_img = Image.new("RGB", (total_width, total_height), "white")
         draw_final = ImageDraw.Draw(final_img)
 
-        # Draw each header line centered
         current_y = padding
         for i, line in enumerate(header_lines):
             line_width = line_widths[i]
             line_height = line_heights[i]
             text_x = (total_width - line_width) // 2
             draw_final.text((text_x, current_y), line, fill="black", font=font)
-            current_y += line_height + 5  # spacing between lines
+            current_y += line_height + 5
 
-        # Paste QR code below the header
         qr_x = (total_width - qr_img.width) // 2
         qr_y = current_y
         final_img.paste(qr_img, (qr_x, qr_y))
 
-        # --- 6. Save QR PNG ---
         qr_folder = os.path.join(settings.MEDIA_ROOT, "qrcodes/users")
         os.makedirs(qr_folder, exist_ok=True)
         qr_path = os.path.join(qr_folder, f"{self.uuid}.png")
         final_img.save(qr_path)
+
 
 class Follow(BaseModel):
     follower = models.ForeignKey(
@@ -118,4 +139,3 @@ class Follow(BaseModel):
 
     def __str__(self):
         return f"{self.follower} follows {self.object}"
-

@@ -1,7 +1,8 @@
 from PIL import Image
 import uuid
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
+
 
 class BaseModel(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
@@ -11,8 +12,12 @@ class BaseModel(models.Model):
     class Meta:
         abstract = True
 
+
 class Ownable(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="%(class)s_owned")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # string ref avoids AppRegistryNotReady on startup
+        on_delete=models.CASCADE,
+        related_name="%(class)s_owned")
     display_name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)

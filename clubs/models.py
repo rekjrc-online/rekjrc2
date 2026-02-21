@@ -1,9 +1,7 @@
+from django.conf import settings
 from django.urls import reverse
 from django.db import models
 from rekjrc.base_models import BaseModel, Ownable
-from locations.models import Location
-from teams.models import Team
-from django.urls import reverse
 from locations.models import Location
 from teams.models import Team
 
@@ -11,7 +9,7 @@ class Club(BaseModel, Ownable):
     advanced_relations = (
         ("locations", "Location"),
         ("members", "Member"),
-        ("teams", "Team") )
+        ("teams", "Team"))
 
     def __str__(self):
         return self.display_name
@@ -48,11 +46,11 @@ class ClubMember(BaseModel):
         on_delete=models.CASCADE,
         related_name="members")
     user = models.ForeignKey(
-        "auth.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="club_memberships")
     invited_by = models.ForeignKey(
-        "auth.User",
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         related_name="club_invitations",
         null=True, blank=True)
@@ -80,4 +78,3 @@ class ClubTeam(BaseModel):
 
     def __str__(self):
         return f"{self.club.display_name} @ {self.team}"
-

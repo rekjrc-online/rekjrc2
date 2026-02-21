@@ -1,11 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
+
 class ChatMessage(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_messages")
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="chat_messages")
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -29,8 +30,8 @@ class ChatMessage(models.Model):
 
     @property
     def speaker_display(self):
-        full_name = f"{self.user}".strip()
-        return full_name or self.user.username
+        full_name = f"{self.user.first_name} {self.user.last_name}".strip()
+        return full_name or self.user.email
 
     def clean(self):
         errors = {}
@@ -40,4 +41,3 @@ class ChatMessage(models.Model):
             errors[NON_FIELD_ERRORS] = "Channel is required."
         if errors:
             raise ValidationError(errors)
-    
