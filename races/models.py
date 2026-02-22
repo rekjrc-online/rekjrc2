@@ -20,7 +20,9 @@ class Race(BaseModel, Ownable):
         ('Stopwatch Race',  'Stopwatch Race'),
         ('Long Jump',       'Long Jump'),
         ('Top Speed',       'Top Speed'),
-        ('Judged Event',    'Judged Event') ]
+        ('Judged Event',    'Judged Event'),
+        ('Round Robin',     'Round Robin'),
+        ('Swiss System',    'Swiss System'), ]
     race_type = models.CharField(
         max_length=30,
         choices=RACE_TYPE_CHOICES,

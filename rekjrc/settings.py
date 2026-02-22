@@ -78,6 +78,8 @@ INSTALLED_APPS = [
     "stopwatch",
     "topspeed",
     "laprace",
+    "roundrobin",
+    "swiss",
 
     # Site apps
     #"accounts",

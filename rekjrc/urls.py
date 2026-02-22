@@ -44,6 +44,8 @@ urlpatterns = [
     path('laprace/', include(('laprace.urls', 'laprace'), namespace='laprace')),
     path('longjump/', include(('longjump.urls', 'longjump'), namespace='longjump')),
     path('topspeed/', include(('topspeed.urls', 'topspeed'), namespace='topspeed')),
+    path('roundrobin/', include(('roundrobin.urls', 'roundrobin'), namespace='roundrobin')),
+    path('swiss/', include(('swiss.urls', 'swiss'), namespace='swiss')),
 
     path("api/accounts/", include(("accounts.api.urls","accounts_api"), namespace="accounts_api")),
     path("api/builds/", include(("builds.api.urls","builds_api"), namespace="builds_api")),

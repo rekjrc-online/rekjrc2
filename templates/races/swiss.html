@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/swiss.html -->
+
+<div class="panel" style="text-align: center;">
+    <h3>Swiss Bracket</h3>
+    {% if max_round and target_rounds %}
+        <small class="text-muted">
+            Swiss Round {{ max_round }} of {{ target_rounds }}
+            {% if max_round == target_rounds %} — Championship Round pending{% endif %}
+        </small>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <center>
+        <form method="post" id="swiss-race-form">
+            {% csrf_token %}
+            <table cellpadding="5" cellspacing="0" align="center">
+                <thead>
+                    <tr>
+                        <td>Round</td>
+                        <td>Racers</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for round in rounds %}
+
+                        {# ---- section header when round changes ---- #}
+                        {% if forloop.first %}
+                            {% if round.round_number == CHAMPIONSHIP_ROUND %}
+                                <tr>
+                                    <td colspan="2">
+                                        <strong>Championship Round</strong>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="2">
+                                        <strong>Round {{ round.round_number }}</strong>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% else %}
+                            {% with prev=rounds|dictsort:"id" %}{% endwith %}
+                            {# detect round boundary by comparing to previous round_number #}
+                        {% endif %}
+
+                        <tr>
+                            <td class="text-center">
+                                {% if round.round_number == CHAMPIONSHIP_ROUND %}
+                                    🏆
+                                {% else %}
+                                    {{ round.round_number }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if round.model2 == None %}
+                                    {# BYE #}
+                                    <div class="btn-wrapper my-1">
+                                        <button type="button" class="btn btn-success active" disabled>
+                                            {{ round.model1.driver }} - {{ round.model1.build }}
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">— BYE —</small>
+                                {% elif round.winner %}
+                                    <div class="btn-wrapper my-1">
+                                        <button type="button" class="winner-btn btn btn-success active" disabled>
+                                            {% if round.winner == round.model1 %}
+                                                {{ round.model1.driver }} - {{ round.model1.build }}
+                                            {% else %}
+                                                {{ round.model2.driver }} - {{ round.model2.build }}
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <div class="btn-wrapper my-1">
+                                        <button type="button"
+                                                class="winner-btn btn btn-outline-primary {% if round.winner == round.model1 %}active{% endif %}"
+                                                data-round-id="{{ round.id }}"
+                                                data-model-id="{{ round.model1.id }}">
+                                            {{ round.model1.driver }} - {{ round.model1.build }}
+                                        </button>
+                                    </div>
+                                    <div class="btn-wrapper my-1">
+                                        <button type="button"
+                                                class="winner-btn btn btn-outline-primary {% if round.winner == round.model2 %}active{% endif %}"
+                                                data-round-id="{{ round.id }}"
+                                                data-model-id="{{ round.model2.id }}">
+                                            {{ round.model2.driver }} - {{ round.model2.build }}
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <input type="hidden"
+                                   name="winner_{{ round.id }}"
+                                   id="winner_{{ round.id }}"
+                                   value="{% if round.winner %}{{ round.winner.id }}{% endif %}">
+                        </tr>
+                        <tr><td colspan="2"><hr></td></tr>
+
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if not ready_to_finish and not race.race_finished %}
+                <div class="mt-3">
+                    <button type="submit" class="submit-btn btn btn-primary">
+                        Save Winners
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+
+        {% if ready_to_finish and not race.race_finished %}
+            <form method="post" action="{% url 'swiss:finish' race.uuid %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success mt-2">
+                    Complete Race &amp; Post Results
+                </button>
+            </form>
+        {% endif %}
+    </center>
+</div>
+
+{% if standings %}
+<div class="panel mt-3">
+    <h5 class="text-center">Standings</h5>
+    <table cellpadding="5" cellspacing="0" align="center" style="min-width: 340px;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Driver</th>
+                <th>W</th>
+                <th>L</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in standings %}
+                <tr>
+                    <td class="text-center">
+                        {% if forloop.counter == 1 %}🥇
+                        {% elif forloop.counter == 2 %}🥈
+                        {% elif forloop.counter == 3 %}🥉
+                        {% else %}{{ forloop.counter }}{% endif %}
+                    </td>
+                    <td>{{ row.driver.driver }} – {{ row.driver.build }}</td>
+                    <td class="text-center">{{ row.wins }}</td>
+                    <td class="text-center">{{ row.losses }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('.winner-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const roundId = btn.dataset.roundId;
+                const modelId = btn.dataset.modelId;
+                document.getElementById(`winner_${roundId}`).value = modelId;
+                document.querySelectorAll(`.winner-btn[data-round-id='${roundId}']`)
+                        .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    });
+</script>
+
+{% endblock %}

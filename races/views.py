@@ -28,7 +28,12 @@ class Start_(View):
                 return redirect("topspeed:start", race_uuid=race.uuid)
             case "Judged Event":
                 return redirect("judged:start", race_uuid=race.uuid)
+            case "Round Robin":
+                return redirect("roundrobin:start", race_uuid=race.uuid)
+            case "Swiss System":
+                return redirect("swiss:start", race_uuid=race.uuid)
             case _:
+                print("Unknown race_type=", race.race_type)
                 return redirect("races:detail", uuid=race.uuid)
 
 class List_(LoginRequiredMixin, View):
