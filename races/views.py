@@ -43,7 +43,8 @@ class List_(LoginRequiredMixin, View):
         races = Race.objects.filter(owner=request.user, is_active=True, race_finished=False)
         judge_races = Race.objects.filter(
             judge_team__members__user=request.user,
-            race_finished=False
+            race_finished=False,
+            is_active=True
         ).distinct()
 
         return render(request, self.template_name, {
@@ -121,7 +122,7 @@ class Join_(LoginRequiredMixin, View):
 
 class Lock_(LoginRequiredMixin, View):
     def post(self, request, uuid):
-        race = get_object_or_404(Race, uuid=uuid, owner=request.user)
+        race = get_object_or_404(Race.for_user(request.user), uuid=uuid)
         if race.race_finished==True:
             return HttpResponseForbidden("Race is already finished.")
         if race.entry_locked==True:

@@ -57,6 +57,46 @@ class DragRace_(LoginRequiredMixin, View):
             if current_round.exists() and all(r.winner for r in current_round):
                 winners = [r.winner for r in current_round]
                 if len(winners) > 1:
+                    # Post the completed round before advancing
+                    lines = [f"= Round {max_round} Results ="]
+                    for match in current_round.order_by("id"):
+                        if match.winner == match.model1:
+                            lines.append(f"🏁 {match.model1.driver} vs {match.model2.driver}")
+                        else:
+                            lines.append(f"{match.model1.driver} vs 🏁 {match.model2.driver}")
+
+                    # Leaderboard: still in vs eliminated
+                    eliminated = []
+                    for r in rounds.order_by("round_number", "id"):
+                        if r.winner and r.model2:
+                            loser = r.model2 if r.winner == r.model1 else r.model1
+                            eliminated.append(loser)
+                    eliminated_ids = {e.id for e in eliminated}
+                    still_in = [w for w in winners]  # winners of the just-completed round
+                    lines += ["", "= Leaderboard ="]
+                    lines.append("Still in:")
+                    for rd in still_in:
+                        lines.append(f"  ✅ {rd.driver} ({rd.build})")
+                    lines.append("Eliminated:")
+                    # collect all eliminated across all rounds so far
+                    all_eliminated = []
+                    seen_ids = set()
+                    for r in rounds.order_by("round_number", "id"):
+                        if r.winner and r.model2:
+                            loser = r.model2 if r.winner == r.model1 else r.model1
+                            if loser.id not in seen_ids:
+                                all_eliminated.append(loser)
+                                seen_ids.add(loser.id)
+                    for rd in all_eliminated:
+                        lines.append(f"  ❌ {rd.driver} ({rd.build})")
+
+                    content = "\r\n".join(lines)
+                    Post.objects.create(
+                        author_content_type=ContentType.objects.get_for_model(Race),
+                        author_object_id=race.id,
+                        content=content,
+                        display_content=content)
+
                     for i in range(0, len(winners), 2):
                         DragRace.objects.create(
                             race=race,
@@ -128,28 +168,13 @@ class Finish_(LoginRequiredMixin, View):
         racedriver2.save(update_fields=["finish_position"])
 
         final_winner = final_match.winner
+        runner_up = final_match.model2 if final_match.winner == final_match.model1 else final_match.model1
 
         lines = [
-            "🏁 Winner 🏁",
-            f"Driver: {final_winner.driver}",
-            f"Build: {final_winner.build}",
-            "",
+            "🏁 Drag Race Results 🏁",
+            f"1st: {final_winner.driver} ({final_winner.build})",
+            f"2nd: {runner_up.driver} ({runner_up.build})",
         ]
-
-        current_round = None
-        for match in rounds.order_by("round_number", "id"):
-            if match.round_number != current_round:
-                current_round = match.round_number
-                lines.append(f"= Round {current_round} =")
-
-            if match.winner == match.model1:
-                lines.append(
-                    f"🏁 {match.model1.driver} vs {match.model2.driver}"
-                )
-            else:
-                lines.append(
-                    f"{match.model1.driver} vs 🏁 {match.model2.driver}"
-                )
 
         content = "\r\n".join(lines)
 

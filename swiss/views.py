@@ -172,6 +172,26 @@ def _target_rounds(n):
 
 
 # ---------------------------------------------------------------------------
+# Post helpers
+# ---------------------------------------------------------------------------
+
+def _swiss_leaderboard_lines(drivers, wins, losses):
+    """
+    Return a list of text lines showing current W/L standings,
+    sorted by wins desc, losses asc, then driver name.
+    """
+    ordered = sorted(
+        drivers,
+        key=lambda d: (-wins[d.id], losses[d.id], str(d)),
+    )
+    lines = ["", "= Leaderboard ="]
+    for pos, rd in enumerate(ordered, start=1):
+        medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(pos, f"#{pos}")
+        lines.append(f"  {medal} {rd.driver} ({rd.build})  {wins[rd.id]}W–{losses[rd.id]}L")
+    return lines
+
+
+# ---------------------------------------------------------------------------
 # Views
 # ---------------------------------------------------------------------------
 
@@ -253,6 +273,24 @@ class Swiss_(LoginRequiredMixin, View):
                 faced = _past_opponents(swiss_matchups)
 
                 if max_swiss < target:
+                    # Post the completed Swiss round before advancing
+                    lines = [f"= Swiss Round {max_swiss} Results ="]
+                    for m in sorted(current_swiss, key=lambda m: m.id):
+                        if m.model2 is None:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build})  (BYE)")
+                        elif m.winner == m.model1:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build}) vs {m.model2.driver} ({m.model2.build})")
+                        else:
+                            lines.append(f"{m.model1.driver} ({m.model1.build}) vs 🏁 {m.model2.driver} ({m.model2.build})")
+                    lines += _swiss_leaderboard_lines(drivers, swiss_wins, swiss_losses)
+                    content = '\r\n'.join(lines)
+                    Post.objects.create(
+                        author_content_type=ContentType.objects.get_for_model(Race),
+                        author_object_id=race.id,
+                        content=content,
+                        display_content=content,
+                    )
+
                     # Advance to next Swiss round
                     pairs = _swiss_pairings(drivers, swiss_wins, swiss_losses, faced)
                     for model1, model2 in pairs:
@@ -266,6 +304,24 @@ class Swiss_(LoginRequiredMixin, View):
                     return redirect('swiss:swiss', race_uuid=race.uuid)
 
                 else:
+                    # Post the final Swiss round before generating Championship Round
+                    lines = [f"= Swiss Round {max_swiss} Results ="]
+                    for m in sorted(current_swiss, key=lambda m: m.id):
+                        if m.model2 is None:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build})  (BYE)")
+                        elif m.winner == m.model1:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build}) vs {m.model2.driver} ({m.model2.build})")
+                        else:
+                            lines.append(f"{m.model1.driver} ({m.model1.build}) vs 🏁 {m.model2.driver} ({m.model2.build})")
+                    lines += _swiss_leaderboard_lines(drivers, swiss_wins, swiss_losses)
+                    content = '\r\n'.join(lines)
+                    Post.objects.create(
+                        author_content_type=ContentType.objects.get_for_model(Race),
+                        author_object_id=race.id,
+                        content=content,
+                        display_content=content,
+                    )
+
                     # All Swiss rounds done — generate Championship Round
                     pairs = _championship_pairings(drivers, swiss_wins, swiss_losses)
                     for model1, model2 in pairs:
@@ -279,6 +335,37 @@ class Swiss_(LoginRequiredMixin, View):
                     return redirect('swiss:swiss', race_uuid=race.uuid)
 
             elif champ_matchups and all(m.winner_id for m in champ_matchups):
+                # Post championship round results if not already posted
+                already_posted = Post.objects.filter(
+                    author_content_type=ContentType.objects.get_for_model(Race),
+                    author_object_id=race.id,
+                    content__startswith='= Championship Round Results =',
+                ).exists()
+                if not already_posted:
+                    lines = ['= Championship Round Results =']
+                    for m in sorted(champ_matchups, key=lambda m: m.id):
+                        if m.model2 is None:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build})  (BYE)")
+                        elif m.winner == m.model1:
+                            lines.append(f"🏁 {m.model1.driver} ({m.model1.build}) vs {m.model2.driver} ({m.model2.build})")
+                        else:
+                            lines.append(f"{m.model1.driver} ({m.model1.build}) vs 🏁 {m.model2.driver} ({m.model2.build})")
+                    # Leaderboard using final standings order (Swiss record + champ tiebreaker)
+                    champ_winner_ids_now = {m.winner_id for m in champ_matchups if m.winner_id}
+                    swiss_wins_now, swiss_losses_now = _wins_losses(swiss_matchups)
+                    drivers_now = list(RaceDriver.objects.filter(race=race).select_related('driver'))
+                    ordered_now = _final_standings(drivers_now, swiss_wins_now, swiss_losses_now, champ_winner_ids_now)
+                    lines += ["", "= Leaderboard ="]
+                    for pos, rd in enumerate(ordered_now, start=1):
+                        medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(pos, f"#{pos}")
+                        lines.append(f"  {medal} {rd.driver} ({rd.build})  {swiss_wins_now[rd.id]}W–{swiss_losses_now[rd.id]}L")
+                    content = '\r\n'.join(lines)
+                    Post.objects.create(
+                        author_content_type=ContentType.objects.get_for_model(Race),
+                        author_object_id=race.id,
+                        content=content,
+                        display_content=content,
+                    )
                 ready_to_finish = True
 
         # ---- standings for display ----
@@ -328,7 +415,6 @@ class Finish_(LoginRequiredMixin, View):
     Lock the race.  Assign finish_position using Swiss record as primary
     sort and championship round result as tiebreaker.  Post summary.
     """
-
     @transaction.atomic
     def post(self, request, race_uuid):
         race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
@@ -357,10 +443,10 @@ class Finish_(LoginRequiredMixin, View):
             rd.finish_position = position
             rd.save(update_fields=['finish_position'])
 
-        # ---- summary post ----
+        # ---- final results post ----
         winner_rd = standings[0]
         lines = [
-            '🏁 Swiss Bracket Results 🏁',
+            '🏁 Swiss Race Results 🏁',
             f'Winner: {winner_rd.driver}  ({swiss_wins[winner_rd.id]}W–{swiss_losses[winner_rd.id]}L)',
             '',
             '= Final Standings =',
@@ -368,28 +454,6 @@ class Finish_(LoginRequiredMixin, View):
         for pos, rd in enumerate(standings, start=1):
             medal = {1: '🥇', 2: '🥈', 3: '🥉'}.get(pos, f'#{pos}')
             lines.append(f"{medal} {rd.driver}  ({swiss_wins[rd.id]}W–{swiss_losses[rd.id]}L)")
-
-        current_round = None
-        for match in sorted(swiss_only, key=lambda m: (m.round_number, m.id)):
-            if match.round_number != current_round:
-                current_round = match.round_number
-                lines += ['', f'= Round {current_round} =']
-            if match.model2 is None:
-                lines.append(f'🏁 {match.model1.driver} ({match.model1.build})  (BYE)')
-            elif match.winner == match.model1:
-                lines.append(f'🏁 {match.model1.driver} ({match.model1.build}) vs {match.model2.driver} ({match.model2.build})')
-            else:
-                lines.append(f'{match.model1.driver} ({match.model1.build}) vs 🏁 {match.model2.driver} ({match.model2.build})')
-
-        if champ_only:
-            lines += ['', '= Championship Round =']
-            for match in sorted(champ_only, key=lambda m: m.id):
-                if match.model2 is None:
-                    lines.append(f'🏁 {match.model1.driver} ({match.model1.build})  (BYE)')
-                elif match.winner == match.model1:
-                    lines.append(f'🏁 {match.model1.driver} ({match.model1.build}) vs {match.model2.driver} ({match.model2.build})')
-                else:
-                    lines.append(f'{match.model1.driver} ({match.model1.build}) vs 🏁 {match.model2.driver} ({match.model2.build})')
 
         content = '\r\n'.join(lines)
         Post.objects.create(
