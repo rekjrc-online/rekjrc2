@@ -51,25 +51,21 @@ class Crawl_(LoginRequiredMixin, View):
         run.save()
         run_log_json = request.POST.get('run_log')
         if run_log_json:
-            try:
-                log_entries = json.loads(run_log_json)
-                run.log_entries.all().delete()
-                post_text=str(racedriver) + '\r\n'
-                post_text += 'Points: ' + str(points) + '\r\n'
-                for entry in log_entries:
-                    post_text += entry['label'] + '\r\n'
-                    CrawlerRunLog.objects.create(
-                        run=run,
-                        racedriver=run.racedriver,
-                        milliseconds=entry['milliseconds'],
-                        label=entry['label'],
-                        delta=entry['delta'])
-                Post.objects.create(
-                    author_content_type=ContentType.objects.get_for_model(Race),
-                    author_object_id=race.id,
-                    content=post_text)
-            except (json.JSONDecodeError, KeyError, TypeError) as e:
-                print(f"Failed to save run log: {e}")
+            log_entries = json.loads(run_log_json)
+            run.log_entries.all().delete()
+            post_text=str(racedriver) + '\r\n'
+            post_text += 'Points: ' + str(points) + '\r\n'
+            for entry in log_entries:
+                post_text += entry['label'] + '\r\n'
+                CrawlerRunLog.objects.create(
+                    run=run,
+                    milliseconds=entry['milliseconds'],
+                    label=entry['label'],
+                    delta=entry['delta'])
+            Post.objects.create(
+                author_content_type=ContentType.objects.get_for_model(Race),
+                author_object_id=race.id,
+                content=post_text)
         return redirect('crawler:start', race_uuid=race_uuid)
 
 class Finish_(LoginRequiredMixin, View):
@@ -91,10 +87,16 @@ class Finish_(LoginRequiredMixin, View):
             for run in winners:
                 content += f"Driver: {run.racedriver.driver} | Model: {run.racedriver.build}\r\n"
         result_lines = [content]
+        result_lines += "\r\nFinal Leaderboard:"
         for idx, run in enumerate(sorted_runs, start=1):
             elapsed = f"{run.elapsed_time:.2f}s" if run.elapsed_time is not None else "No time"
             points = run.penalty_points
-            result_lines.append(f"{idx}. {run.racedriver.driver} | {run.racedriver.build} | {points} pts | {elapsed}")
+            match idx:
+                case 1: idx_str = "🥇"
+                case 2: idx_str = "🥈"
+                case 3: idx_str = "🥉"
+                case _: idx_str = f"{idx}"
+            result_lines.append(f"{idx_str}. {run.racedriver.driver} | {run.racedriver.build} | {points} pts | {elapsed}")
         results_text = "\r\n".join(result_lines) or "No runs recorded."
         Post.objects.create(
             author_content_type=ContentType.objects.get_for_model(Race),

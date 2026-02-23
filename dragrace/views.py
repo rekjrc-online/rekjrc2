@@ -86,7 +86,7 @@ class DragRace_(LoginRequiredMixin, View):
                     lines += ["", "= Leaderboard ="]
                     lines.append("Still in:")
                     for rd in still_in:
-                        lines.append(f"  ✅ {rd.driver} ({rd.build})")
+                        lines.append(f"✅ {rd.driver} ({rd.build})")
                     lines.append("Eliminated:")
                     # collect all eliminated across all rounds so far
                     all_eliminated = []
@@ -98,7 +98,7 @@ class DragRace_(LoginRequiredMixin, View):
                                 all_eliminated.append(loser)
                                 seen_ids.add(loser.id)
                     for rd in all_eliminated:
-                        lines.append(f"  ❌ {rd.driver} ({rd.build})")
+                        lines.append(f"❌ {rd.driver} ({rd.build})")
 
                     content = "\r\n".join(lines)
                     Post.objects.create(
@@ -181,9 +181,9 @@ class Finish_(LoginRequiredMixin, View):
         runner_up = final_match.model2 if final_match.winner == final_match.model1 else final_match.model1
 
         lines = [
-            "🏁 Drag Race Results 🏁",
-            f"1st: {final_winner.driver} ({final_winner.build})",
-            f"2nd: {runner_up.driver} ({runner_up.build})",
+            "🏁 Drag Race Results 🏁\r\n",
+            f"🥇 {final_winner.driver} ({final_winner.build})",
+            f"🥈 {runner_up.driver} ({runner_up.build})",
         ]
 
         content = "\r\n".join(lines)
