@@ -6,76 +6,48 @@
       [{{ post.profile.display_name }}]
     </a>
   </strong>
-  - {{ post.profile.get_profiletype_display }} - {{ post.insertdate|date:"m/d/y
-  h:iA" }}
+  - {{ post.profile.get_profiletype_display }} - {{ post.insertdate|date:"m/d/y h:iA" }}
 
   <!-- Post Content -->
   <p>{{ post.content|linebreaksbr }}</p>
 
   <!-- Image -->
   {% if post.image %}
-  <a target="_blank" href="{{ post.image.url }}">
-    <img src="{{ post.image.url }}" alt="Post image" />
-  </a>
+    <a target="_blank" href="{{ post.image.url }}">
+      <img src="{{ post.image.url }}" alt="Post image" />
+    </a>
   {% endif %}
 
   <!-- Video / YouTube -->
   {% if post.youtube_id %}
   <div class="video-container">
-    <iframe
-      src="https://www.youtube.com/embed/{{ post.youtube_id }}"
-      frameborder="0"
-      allowfullscreen
-    >
-    </iframe>
+    <iframe src="https://www.youtube.com/embed/{{ post.youtube_id }}" frameborder="0" allowfullscreen></iframe>
   </div>
-  <noscript
-    ><p>
-      <a
-        href="https://www.youtube.com/watch?v={{ post.youtube_id }}"
-        target="_blank"
-        >Watch on YouTube</a
-      >
-    </p></noscript
-  >
   <p>
-    <a
-      href="https://www.youtube.com/watch?v={{ post.youtube_id }}"
-      target="_blank"
-      >Watch on YouTube</a
-    >
+    <a href="https://www.youtube.com/watch?v={{ post.youtube_id }}" target="_blank" >Watch on YouTube</a>
   </p>
   {% elif post.video_url %}
-  <p><a href="{{ post.video_url }}" target="_blank">Watch Video</a></p>
+    <p><a href="{{ post.video_url }}" target="_blank">Watch Video</a></p>
   {% endif %}
 
   <!-- Post Metrics -->
   <div class="metrics" data-post-id="{{ post.id }}">
     {% if user.is_authenticated %}
-    <a
-      href="#"
-      onclick="event.stopPropagation()"
-      class="like-btn text-decoration-none"
-      data-post-id="{{ post.id }}"
-    >
+    <a href="#" onclick="event.stopPropagation()" class="like-btn text-decoration-none" data-post-id="{{ post.id }}">
       {% if post.liked_by_user %}
-      <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
       {% else %}
-      <span class="heart">🤍</span>
+        <span class="heart">🤍</span>
       {% endif %}
       <span class="like-count">{{ post.likes_count }}</span>
-    </a>
-    |
-    <a
-      href="/posts/{{ post.id }}/reply"
-      onclick="event.stopPropagation()"
-      class="text-decoration-none"
-    >
+    </a> |
+    <a href="/posts/{{ post.id }}/reply" onclick="event.stopPropagation()" class="text-decoration-none">
       💬 {{ post.replies.count }}
     </a>
     {% else %}
-    <span class="heart">🤍</span>
-    <span class="like-count">{{ post.likes_count }}</span>
-    | 💬 {{ post.replies.count }} {% endif %}
+      <span class="heart">🤍</span>
+      <span class="like-count">{{ post.likes_count }}</span>
+      | 💬 {{ post.replies.count }}
+    {% endif %}
   </div>
 </div>
