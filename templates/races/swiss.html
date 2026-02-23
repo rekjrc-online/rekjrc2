@@ -139,10 +139,10 @@
             {% for row in standings %}
                 <tr>
                     <td class="text-center">
-                        {% if forloop.counter == 1 %}🥇
-                        {% elif forloop.counter == 2 %}🥈
-                        {% elif forloop.counter == 3 %}🥉
-                        {% else %}{{ forloop.counter }}{% endif %}
+                        {% if row.rank == 1 %}🥇
+                        {% elif row.rank == 2 %}🥈
+                        {% elif row.rank == 3 %}🥉
+                        {% else %}#{{ row.rank }}{% endif %}
                     </td>
                     <td>{{ row.driver.driver }} – {{ row.driver.build }}</td>
                     <td class="text-center">{{ row.wins }}</td>

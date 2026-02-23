@@ -152,8 +152,8 @@ def _final_standings(drivers, swiss_wins, swiss_losses, champ_winner_ids):
     """
     def sort_key(d):
         return (
-            -swiss_wins[d.id],
-             swiss_losses[d.id],
+            -swiss_wins.get(d.id, 0),
+             swiss_losses.get(d.id, 0),
              0 if d.id in champ_winner_ids else 1,
              str(d),
         )
@@ -179,15 +179,23 @@ def _swiss_leaderboard_lines(drivers, wins, losses):
     """
     Return a list of text lines showing current W/L standings,
     sorted by wins desc, losses asc, then driver name.
+    Drivers with identical W/L records share the same rank using
+    standard competition numbering (1, 1, 3, 3, 5 ...).
     """
     ordered = sorted(
         drivers,
         key=lambda d: (-wins[d.id], losses[d.id], str(d)),
     )
     lines = ["", "= Leaderboard ="]
-    for pos, rd in enumerate(ordered, start=1):
-        medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(pos, f"#{pos}")
-        lines.append(f"  {medal} {rd.driver} ({rd.build})  {wins[rd.id]}W–{losses[rd.id]}L")
+    medals = {1: "🥇", 2: "🥈", 3: "🥉"}
+    rank = 1
+    for i, rd in enumerate(ordered):
+        if i > 0:
+            prev = ordered[i - 1]
+            if (wins[rd.id], losses[rd.id]) != (wins[prev.id], losses[prev.id]):
+                rank = i + 1
+        label = medals.get(rank, f"#{rank}")
+        lines.append(f"  {label} {rd.driver} ({rd.build})  {wins[rd.id]}W–{losses[rd.id]}L")
     return lines
 
 
@@ -215,6 +223,16 @@ class Start_(LoginRequiredMixin, View):
         race.save(update_fields=['entry_locked'])
 
         random.shuffle(drivers)
+
+        lines = [f"🏁 {race.display_name} — Race Starting! 🏁", ""]
+        for rd in drivers:
+            lines.append(f"  • {rd.driver} ({rd.build})")
+        content = '\r\n'.join(lines)
+        Post.objects.create(
+            author_content_type=ContentType.objects.get_for_model(Race),
+            author_object_id=race.id,
+            content=content,
+            display_content=content)
 
         for i in range(0, len(drivers), 2):
             model1 = drivers[i]
@@ -350,7 +368,6 @@ class Swiss_(LoginRequiredMixin, View):
                             lines.append(f"🏁 {m.model1.driver} ({m.model1.build}) vs {m.model2.driver} ({m.model2.build})")
                         else:
                             lines.append(f"{m.model1.driver} ({m.model1.build}) vs 🏁 {m.model2.driver} ({m.model2.build})")
-                    # Leaderboard using final standings order (Swiss record + champ tiebreaker)
                     champ_winner_ids_now = {m.winner_id for m in champ_matchups if m.winner_id}
                     swiss_wins_now, swiss_losses_now = _wins_losses(swiss_matchups)
                     drivers_now = list(RaceDriver.objects.filter(race=race).select_related('driver'))
@@ -358,7 +375,7 @@ class Swiss_(LoginRequiredMixin, View):
                     lines += ["", "= Leaderboard ="]
                     for pos, rd in enumerate(ordered_now, start=1):
                         medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(pos, f"#{pos}")
-                        lines.append(f"  {medal} {rd.driver} ({rd.build})  {swiss_wins_now[rd.id]}W–{swiss_losses_now[rd.id]}L")
+                        lines.append(f"  {medal} {rd.driver} ({rd.build})  {swiss_wins_now.get(rd.id, 0)}W–{swiss_losses_now.get(rd.id, 0)}L")
                     content = '\r\n'.join(lines)
                     Post.objects.create(
                         author_content_type=ContentType.objects.get_for_model(Race),
@@ -371,15 +388,28 @@ class Swiss_(LoginRequiredMixin, View):
         # ---- standings for display ----
         swiss_only = [m for m in all_matchups if m.round_number != CHAMPIONSHIP_ROUND]
         champ_only = [m for m in all_matchups if m.round_number == CHAMPIONSHIP_ROUND]
-        swiss_wins, swiss_losses = _wins_losses(swiss_only) if swiss_only else ({}, {})
+        swiss_wins, swiss_losses = _wins_losses(swiss_only) if swiss_only else (defaultdict(int), defaultdict(int))
         champ_winner_ids = {m.winner_id for m in champ_only if m.winner_id}
 
         drivers_qs = RaceDriver.objects.filter(race=race).select_related('driver')
         ordered    = _final_standings(list(drivers_qs), swiss_wins, swiss_losses, champ_winner_ids)
-        standings_rows = [
-            {'driver': d, 'wins': swiss_wins[d.id], 'losses': swiss_losses[d.id]}
-            for d in ordered
-        ]
+
+        # Assign tied ranks for the standings table
+        standings_rows = []
+        rank = 1
+        for i, d in enumerate(ordered):
+            if i > 0:
+                prev = ordered[i - 1]
+                prev_key = (swiss_wins.get(prev.id, 0), swiss_losses.get(prev.id, 0))
+                this_key = (swiss_wins.get(d.id, 0), swiss_losses.get(d.id, 0))
+                if this_key != prev_key:
+                    rank = i + 1
+            standings_rows.append({
+                'driver': d,
+                'wins':   swiss_wins.get(d.id, 0),
+                'losses': swiss_losses.get(d.id, 0),
+                'rank':   rank,
+            })
 
         max_swiss_display = max((m.round_number for m in swiss_only), default=0)
 
@@ -447,13 +477,13 @@ class Finish_(LoginRequiredMixin, View):
         winner_rd = standings[0]
         lines = [
             '🏁 Swiss Race Results 🏁',
-            f'Winner: {winner_rd.driver}  ({swiss_wins[winner_rd.id]}W–{swiss_losses[winner_rd.id]}L)',
+            f'Winner: {winner_rd.driver}  ({swiss_wins.get(winner_rd.id, 0)}W–{swiss_losses.get(winner_rd.id, 0)}L)',
             '',
             '= Final Standings =',
         ]
         for pos, rd in enumerate(standings, start=1):
             medal = {1: '🥇', 2: '🥈', 3: '🥉'}.get(pos, f'#{pos}')
-            lines.append(f"{medal} {rd.driver}  ({swiss_wins[rd.id]}W–{swiss_losses[rd.id]}L)")
+            lines.append(f"{medal} {rd.driver}  ({swiss_wins.get(rd.id, 0)}W–{swiss_losses.get(rd.id, 0)}L)")
 
         content = '\r\n'.join(lines)
         Post.objects.create(

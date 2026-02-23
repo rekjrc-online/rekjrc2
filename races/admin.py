@@ -9,6 +9,7 @@ class RaceDriverInline(admin.TabularInline):
 @admin.register(Race)
 class RaceAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "race_type",
         "event",
         "location",

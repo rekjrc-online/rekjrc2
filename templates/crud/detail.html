@@ -52,6 +52,10 @@
   </table>
 </div>
 
+{% if object_posts is not None %}
+  {% include "posts/object_posts.html" %}
+{% endif %}
+
 {% if model_name == "event" %}
   {% include "events/detail.html" %}
 {% endif %}

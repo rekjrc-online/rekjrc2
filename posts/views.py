@@ -126,3 +126,39 @@ def toggle_like_ajax(request, post_uuid):
         "success": True,
         "post_uuid": str(post.uuid),
     })
+
+
+class ObjectPostsAjax(View):
+    """
+    Generic paginated posts endpoint for any model detail page.
+    URL: /posts/for/<model_name>/<uuid>/?page=N
+    Returns JSON {html, has_next} using the posts/list.html fragment.
+    """
+    POSTS_PER_PAGE = 5
+
+    def get(self, request, model_name, uuid):
+        from django.apps import apps
+        from django.core.paginator import Paginator
+        from django.contrib.contenttypes.models import ContentType as CT
+
+        model = None
+        for m in apps.get_models():
+            if m._meta.verbose_name.lower().replace(" ", "") == model_name.lower().replace(" ", ""):
+                model = m
+                break
+        if model is None:
+            return JsonResponse({"html": "", "has_next": False}, status=404)
+
+        obj = get_object_or_404(model, uuid=uuid)
+        content_type = CT.objects.get_for_model(model)
+        qs = Post.objects.filter(
+            author_content_type=content_type,
+            author_object_id=obj.id,
+        ).order_by("-created_at")
+
+        page_num = int(request.GET.get("page", 1))
+        paginator = Paginator(qs, self.POSTS_PER_PAGE)
+        page = paginator.get_page(page_num)
+
+        html = render_to_string("posts/list.html", {"posts": page.object_list}, request=request)
+        return JsonResponse({"html": html, "has_next": page.has_next()})

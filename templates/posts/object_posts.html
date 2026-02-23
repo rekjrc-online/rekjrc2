@@ -1,0 +1,37 @@
+{% load static %}
+<!-- posts/object_posts.html — include on any detail page that has object_posts in context -->
+<script src="/static/likes.js"></script>
+
+<div class="panel"><h4>Posts</h4></div>
+
+<div id="object-posts-feed">
+  {% for post in object_posts %}
+    {% include "posts/post.html" %}
+  {% empty %}
+    <div class="panel"><em>No posts yet.</em></div>
+  {% endfor %}
+</div>
+
+<div id="object-posts-loading" style="display:none;">
+  Loading...
+</div>
+<div id="object-posts-end" style="display:none;">
+  <br /><br />
+</div>
+
+<script>
+window.SCROLL_CONFIG = {
+    feedId:       'object-posts-feed',
+    loadingId:    'object-posts-loading',
+    endMessageId: 'object-posts-end',
+    startPage:    2,
+    fetchUrl:     "{% url 'posts:ajax_object_posts' object_posts_model_name object.uuid %}"
+};
+</script>
+{% if object_posts.has_next %}
+<script>
+  // Show the loading sentinel so the observer can trigger on scroll
+  document.getElementById('object-posts-loading').style.display = 'block';
+</script>
+{% endif %}
+<script src="/static/scroll_replies.js"></script>

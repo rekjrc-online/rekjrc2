@@ -26,6 +26,16 @@ class Start_(LoginRequiredMixin, View):
         if len(drivers) < 2:
             return redirect("dragrace:dragrace", race_uuid=race.uuid)
 
+        lines = [f"🏁 {race.display_name} 🏁", "🏁 Race Starting 🏁", ""]
+        for rd in drivers:
+            lines.append(f"  • {rd.driver} ({rd.build})")
+        content = "\r\n".join(lines)
+        Post.objects.create(
+            author_content_type=ContentType.objects.get_for_model(Race),
+            author_object_id=race.id,
+            content=content,
+            display_content=content)
+
         # Calculate bracket size
         total_slots = 1
         while total_slots < len(drivers):
@@ -61,9 +71,9 @@ class DragRace_(LoginRequiredMixin, View):
                     lines = [f"= Round {max_round} Results ="]
                     for match in current_round.order_by("id"):
                         if match.winner == match.model1:
-                            lines.append(f"🏁 {match.model1.driver} vs {match.model2.driver}")
+                            lines.append(f"🏁 {match.model1.driver} ({match.model1.build}) vs {match.model2.driver} ({match.model2.build})")
                         else:
-                            lines.append(f"{match.model1.driver} vs 🏁 {match.model2.driver}")
+                            lines.append(f"{match.model1.driver} ({match.model1.build}) vs 🏁 {match.model2.driver} ({match.model2.build})")
 
                     # Leaderboard: still in vs eliminated
                     eliminated = []

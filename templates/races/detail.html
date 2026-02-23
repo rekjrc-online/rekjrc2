@@ -109,4 +109,8 @@
   {% endif %}
 {% endif %}
 
+{% if object_posts is not None %}
+  {% include "posts/object_posts.html" %}
+{% endif %}
+
 {% endblock %}

@@ -1,5 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
+from django.core.paginator import Paginator
 from django.db.models import ForeignKey
+
+DETAIL_POSTS_PER_PAGE = 5
 
 class CrudAuthMixin(LoginRequiredMixin):
     login_url = "/accounts/login/"
@@ -35,6 +39,8 @@ class CrudContextMixin:
         return form
 
     def get_context_data(self, **kwargs):
+        from posts.models import Post
+        from posts.views import ObjectPostsAjax
         ctx = super().get_context_data(**kwargs)
         model = self.model
         ctx["model_name"] = self.model_name or model._meta.verbose_name
@@ -58,6 +64,18 @@ class CrudContextMixin:
                         field_values.append(field_values.pop(i))
                         break
             ctx["field_values"] = field_values
+
+            # First page of posts for this object (AJAX loads subsequent pages)
+            content_type = ContentType.objects.get_for_model(model)
+            posts_qs = Post.objects.filter(
+                author_content_type=content_type,
+                author_object_id=obj.id,
+            ).order_by("created_at")
+            paginator = Paginator(posts_qs, DETAIL_POSTS_PER_PAGE)
+            first_page = paginator.get_page(1)
+            ctx["object_posts"] = first_page
+            ctx["object_posts_model_name"] = model._meta.verbose_name.lower().replace(" ", "")
+
         return ctx
 
     def form_valid(self, form):

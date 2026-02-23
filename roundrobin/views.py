@@ -23,6 +23,15 @@ class Start_(LoginRequiredMixin, View):
         race.entry_locked = True
         race.save(update_fields=['entry_locked'])
         random.shuffle(drivers)
+        lines = [f"🏁 {race.display_name} — Race Starting! 🏁", ""]
+        for rd in drivers:
+            lines.append(f"  • {rd.driver} ({rd.build})")
+        content = '\r\n'.join(lines)
+        Post.objects.create(
+            author_content_type=ContentType.objects.get_for_model(Race),
+            author_object_id=race.id,
+            content=content,
+            display_content=content)
         matchups = [
             RoundRobinRace(race=race, model1=a, model2=b)
             for a, b in combinations(drivers, 2) ]
@@ -85,13 +94,7 @@ class Finish_(LoginRequiredMixin, View):
         for entry in standings:
             rd    = entry['driver']
             medal = {1: '🥇', 2: '🥈', 3: '🥉'}.get(rd.finish_position, f"#{rd.finish_position}")
-            lines.append(f"{medal} {rd.driver}  ({entry['wins']}W – {entry['losses']}L)")
-        lines += ['', '= Matchup Results =']
-        for m in matchups:
-            if m.winner == m.model1:
-                lines.append(f"🏁 {m.model1.driver} vs {m.model2.driver}")
-            else:
-                lines.append(f"{m.model1.driver} vs 🏁 {m.model2.driver}")
+            lines.append(f"{medal} {entry['wins']}W – {entry['losses']}L – {rd.driver} ({rd.build})")
         content = '\r\n'.join(lines)
         Post.objects.create(
             author_content_type=ContentType.objects.get_for_model(Race),
