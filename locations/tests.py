@@ -8,7 +8,7 @@ User = get_user_model()
 
 class LocationModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="tester", password="pass")
+        self.user = User.objects.create_user(email="tester@test.com", password="pass")
 
     def test_create_location_valid(self):
         loc = Location.objects.create(
@@ -45,7 +45,7 @@ class LocationModelTests(TestCase):
 
 class LocationFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="tester", password="pass")
+        self.user = User.objects.create_user(email="tester@test.com", password="pass")
 
     def test_form_valid_data(self):
         form_data = {

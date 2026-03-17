@@ -1,5 +1,6 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from builds.models import Build
 from drivers.models import Driver
 from races.models import Race, RaceDriver
@@ -9,7 +10,7 @@ from .forms import DragRaceForm
 class DragRaceTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="user1",
+            email="user1@test.com",
             password="pass")
         self.race = Race.objects.create(
             display_name="Test Race",

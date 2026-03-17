@@ -33,7 +33,7 @@
             <td>{{ d.build }}</td>
             <td>
                 {% if d.run and d.run.topspeed %}
-                    {{ d.run.topspeed }} mph
+                    {{ d.run.topspeed|floatformat:2 }} mph
                 {% else %}
                     --
                 {% endif %}

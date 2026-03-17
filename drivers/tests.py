@@ -1,11 +1,12 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from .models import Driver
 from .forms import DriverForm
 
 class DriverModelFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="user1", password="pass")
+        self.user = User.objects.create_user(email="user1@test.com", password="pass")
 
     def test_driver_str(self):
         driver = Driver.objects.create(owner=self.user, display_name="Speedy")

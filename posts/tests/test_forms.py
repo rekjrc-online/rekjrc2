@@ -1,11 +1,12 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from posts.forms import PostForm
 from drivers.models import Driver
 
 class PostFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="user1", password="pass")
+        self.user = User.objects.create_user(email="user1@test.com", password="pass")
 
     def test_post_form_valid_with_driver_author(self):
         driver = Driver.objects.create(display_name="Active", owner=self.user, is_active=True)

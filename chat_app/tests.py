@@ -1,5 +1,6 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from .models import ChatMessage
@@ -7,8 +8,8 @@ from .forms import ChatMessageForm
 
 class ChatMessageModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="jason",password="password")
-        self.other_user = User.objects.create_user(username="evil",password="password")
+        self.user = User.objects.create_user(email="jason@test.com", password="password", first_name="Jason")
+        self.other_user = User.objects.create_user(email="evil@test.com", password="password")
         self.channel = self.user
 
     def test_chat_message_creation(self):
@@ -26,7 +27,7 @@ class ChatMessageModelTests(TestCase):
             user=self.user,
             channel=self.channel,
             content="Test")
-        self.assertEqual(msg.speaker_display, "jason")
+        self.assertEqual(msg.speaker_display, "Jason")
 
 # ----------------------------------------------------------------------
 # Form tests
@@ -34,10 +35,11 @@ class ChatMessageModelTests(TestCase):
 class ChatMessageFormTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="jason",
-            password="password")
+            email="jason@test.com",
+            password="password",
+            first_name="Jason")
         self.other_user = User.objects.create_user(
-            username="evil",
+            email="evil@test.com",
             password="password")
         self.channel = self.user
 

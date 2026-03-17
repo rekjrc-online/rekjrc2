@@ -1,5 +1,6 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from locations.models import Location
 from .models import Club, ClubLocation, ClubMember
 from .forms import ClubForm
@@ -8,8 +9,8 @@ from .forms import ClubMemberForm
 
 class ClubTests(TestCase):
     def setUp(self):
-        self.owner = User.objects.create_user(username="owner", password="pass")
-        self.user = User.objects.create_user(username="member", password="pass")
+        self.owner = User.objects.create_user(email="owner@test.com", password="pass")
+        self.user = User.objects.create_user(email="member@test.com", password="pass")
         self.location = Location.objects.create(display_name="Test Location", owner=self.owner, latitude=0, longitude=0)
 
     def test_club_form_save_with_owner(self):

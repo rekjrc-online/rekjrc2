@@ -10,7 +10,7 @@ User = get_user_model()
 
 class StopwatchRunFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="raceowner", password="pass")
+        self.user = User.objects.create_user(email="raceowner@test.com", password="pass")
         self.race = Race.objects.create(display_name="Race1", owner=self.user)
         self.driver = Driver.objects.create(display_name="Test Driver", owner=self.user)
         self.build = Build.objects.create(display_name="Test Build", owner=self.user)

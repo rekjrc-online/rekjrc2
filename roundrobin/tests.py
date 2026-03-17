@@ -1,11 +1,7 @@
-"""
-Basic sanity tests for the roundrobin app.
-"""
 from django.test import TestCase
 from unittest.mock import MagicMock
 from itertools import combinations
 from collections import defaultdict
-
 
 # ---------------------------------------------------------------------------
 # Pure-logic tests (no DB required)
@@ -21,7 +17,7 @@ def _build_standings_pure(matchups):
     for m in matchups:
         participants[m['model1_id']] = m['model1']
         participants[m['model2_id']] = m['model2']
-        if m['winner_id']:
+        if m['winner_id'] is not None:
             played[m['model1_id']] += 1
             played[m['model2_id']] += 1
             wins[m['winner_id']] += 1

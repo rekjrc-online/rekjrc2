@@ -1,5 +1,6 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from races.models import Race, RaceDriver
 from drivers.models import Driver
 from builds.models import Build
@@ -10,8 +11,8 @@ from .forms import JudgedScoreForm
 class JudgedEventTests(TestCase):
 
     def setUp(self):
-        self.user1 = User.objects.create_user(username='user1', password='pass')
-        self.user2 = User.objects.create_user(username='user2', password='pass')
+        self.user1 = User.objects.create_user(email='user1@test.com', password='pass')
+        self.user2 = User.objects.create_user(email='user2@test.com', password='pass')
         self.judge_team = Team.objects.create(display_name="Judges", owner=self.user1)
         TeamMember.objects.create(team=self.judge_team, user=self.user2)
         self.race = Race.objects.create(

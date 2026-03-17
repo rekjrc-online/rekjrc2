@@ -7,7 +7,7 @@ User = get_user_model()
 
 class TeamTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@test.com", password="pass")
 
     def test_team_form_valid(self):
         form_data = {

@@ -4,12 +4,13 @@ from drivers.models import Driver
 from builds.models import Build
 from .models import CrawlerRun, CrawlerRunLog
 from .forms import CrawlerRunForm
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 
 class CrawlerTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="user1",
+            email="user1@test.com",
             password="pass")
         self.race = Race.objects.create(
             display_name="Test Race",

@@ -1,5 +1,6 @@
 from django.urls import reverse
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -10,8 +11,8 @@ from django.contrib.contenttypes.models import ContentType
 class PostApiTests(TestCase):
     def setUp(self):
         # Users
-        self.user = User.objects.create_user(username="user1", password="pass")
-        self.user2 = User.objects.create_user(username="user2", password="pass")
+        self.user = User.objects.create_user(email="user1@test.com", password="pass")
+        self.user2 = User.objects.create_user(email="user2@test.com", password="pass")
 
         # API client
         self.client = APIClient()

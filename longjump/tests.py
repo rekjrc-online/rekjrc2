@@ -11,7 +11,7 @@ User = get_user_model()
 
 class LongJumpRunModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="tester", password="pass")
+        self.user = User.objects.create_user(email="tester@test.com", password="pass")
         self.race = Race.objects.create(display_name="Test Race", owner=self.user, is_active=True)
         self.driver = Driver.objects.create(display_name="Driver 1", owner=self.user)
         self.build = Build.objects.create(display_name="Car 1", owner=self.user)
@@ -48,7 +48,7 @@ class LongJumpRunModelTests(TestCase):
 
 class LongJumpRunFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="tester", password="pass")
+        self.user = User.objects.create_user(email="tester@test.com", password="pass")
         self.race = Race.objects.create(display_name="Test Race", owner=self.user, is_active=True)
         self.driver = Driver.objects.create(display_name="Driver 1", owner=self.user)
         self.build = Build.objects.create(display_name="Car 1", owner=self.user)

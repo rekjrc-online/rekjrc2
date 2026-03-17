@@ -8,7 +8,7 @@ User = get_user_model()
 
 class TrackTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="owner", password="pass")
+        self.user = User.objects.create_user(email="owner@test.com", password="pass")
         self.location = Location.objects.create(display_name="Test Location", owner=self.user)
 
     def test_track_str(self):

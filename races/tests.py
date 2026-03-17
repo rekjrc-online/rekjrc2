@@ -15,7 +15,7 @@ User = get_user_model()
 
 class RaceFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="tester", password="pass")
+        self.user = User.objects.create_user(email="tester@test.com", password="pass")
         self.club = Club.objects.create(display_name="Test Club", owner=self.user)
         self.location = Location.objects.create(display_name="Test Location", owner=self.user)
         self.event = Event.objects.create(display_name="Test Event", owner=self.user)
@@ -53,8 +53,8 @@ class RaceFormTests(TestCase):
 
 class RaceDriverFormTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="driveruser", password="pass")
-        self.race_owner = User.objects.create_user(username="raceowner", password="pass")
+        self.user = User.objects.create_user(email="driveruser@test.com", password="pass")
+        self.race_owner = User.objects.create_user(email="raceowner@test.com", password="pass")
         self.race = Race.objects.create(display_name="Race1", owner=self.race_owner)
         self.build = Build.objects.create(display_name="Test Build", owner=self.user)
         self.driver = Driver.objects.create(display_name="Test Driver", owner=self.user)

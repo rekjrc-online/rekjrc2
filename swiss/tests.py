@@ -171,20 +171,21 @@ class ChampionshipPairingTests(TestCase):
         sets   = self._pairs_as_sets(pairs)
         # Rule 1: best vs worst forced
         self.assertIn(frozenset({1, 6}), sets)
-        # Rule 2: same score groups pair together
-        self.assertIn(frozenset({2, 3}), sets)  # 2-1 vs 2-1
-        self.assertIn(frozenset({4, 5}), sets)  # 1-2 vs 1-2
+        # Rule 2: mirror bracket — 2nd vs 2nd-worst, 3rd vs 3rd-worst
+        self.assertIn(frozenset({2, 5}), sets)
+        self.assertIn(frozenset({3, 4}), sets)
 
-    def test_best_vs_worst_not_mirror(self):
-        # Specifically ensure 2-1 does NOT race 1-2 in the middle pairs
+    def test_mirror_bracket_middle_pairs(self):
+        # Algorithm is a pure mirror bracket: 1st vs last, 2nd vs 2nd-last, etc.
+        # For 6 drivers ranked 1-6: pairs are {1,6}, {2,5}, {3,4}
         drivers = [_d(i) for i in range(1, 7)]
         wins   = defaultdict(int, {1: 3, 2: 2, 3: 2, 4: 1, 5: 1, 6: 0})
         losses = defaultdict(int, {1: 0, 2: 1, 3: 1, 4: 2, 5: 2, 6: 3})
         pairs  = _championship_pairings(drivers, wins, losses)
         sets   = self._pairs_as_sets(pairs)
+        self.assertIn(frozenset({2, 5}), sets)
+        self.assertIn(frozenset({3, 4}), sets)
         self.assertNotIn(frozenset({2, 4}), sets)
-        self.assertNotIn(frozenset({2, 5}), sets)
-        self.assertNotIn(frozenset({3, 4}), sets)
         self.assertNotIn(frozenset({3, 5}), sets)
 
     def test_2_drivers_single_match(self):

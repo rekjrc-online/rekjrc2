@@ -1,12 +1,13 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+User = get_user_model()
 from drivers.models import Driver
 from posts.models import Post, strip_html, make_clickable_urls
 from django.contrib.contenttypes.models import ContentType
 
 class PostModelTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="user1", password="pass")
+        self.user = User.objects.create_user(email="user1@test.com", password="pass")
         self.driver = Driver.objects.create(display_name="Test Driver", owner=self.user, is_active=True)
 
     def create_post(self, content="Test post", author=None):

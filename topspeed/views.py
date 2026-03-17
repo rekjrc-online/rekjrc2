@@ -44,7 +44,7 @@ class Race_(LoginRequiredMixin, View):
             return HttpResponseForbidden("A top speed has already been recorded for this run.")
         topspeed = request.POST.get('topspeed')
         if topspeed is not None:
-            run.topspeed = int(topspeed)
+            run.topspeed = float(topspeed)
         run.save()
         post_text = f"Top Speed Recorded\r\nDriver: {run.racedriver.driver}\r\nBuild: {run.racedriver.build}\r\nTop Speed: {run.topspeed}mph"
         Post.objects.create(
@@ -75,8 +75,8 @@ class Finish_(LoginRequiredMixin, View):
                 content += f"Driver: {run.racedriver.driver} | Model: {run.racedriver.build}\r\n"
         result_lines = [content]
         for idx, run in enumerate(sorted_runs, start=1):
-            distance = f"{run.topspeed}mph" if run.topspeed is not None else "No top speed"
-            result_lines.append(f"{idx}. {run.topspeed}mph | {run.racedriver.driver} | {run.racedriver.build}")
+            distance = f"{run.topspeed:.2f}mph" if run.topspeed is not None else "No top speed"
+            result_lines.append(f"{idx}. {run.topspeed:.2f}mph | {run.racedriver.driver} | {run.racedriver.build}")
         results_text = "\r\n".join(result_lines) or "No runs recorded."
         Post.objects.create(
             author_content_type=ContentType.objects.get_for_model(Race),
