@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'widget_tweaks',
     "rest_framework",
+    "mozilla_django_oidc", #okta
 
     # Ownable apps
     "builds",
@@ -205,7 +206,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Custom User Model
 # ------------------------------
 AUTH_USER_MODEL = "accounts.User"
-AUTHENTICATION_BACKENDS = [ 'accounts.backends.EmailBackend', ]
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.EmailBackend",
+    "mozilla_django_oidc.auth.OIDCAuthenticationBackend", 
+]
+OIDC_RP_CLIENT_ID              = env('OKTA_CLIENT_ID')
+OIDC_RP_CLIENT_SECRET          = env('OKTA_CLIENT_SECRET')
+OIDC_RP_SIGN_ALGO              = 'RS256'
+OIDC_OP_JWKS_ENDPOINT          = 'https://integrator-9801062.okta.com/oauth2/default/v1/keys'
+OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://integrator-9801062.okta.com/oauth2/default/v1/authorize'
+OIDC_OP_TOKEN_ENDPOINT         = 'https://integrator-9801062.okta.com/oauth2/default/v1/token'
+OIDC_OP_USER_ENDPOINT          = 'https://integrator-9801062.okta.com/oauth2/default/v1/userinfo'
 
 # ------------------------------
 # Login/Logout redirect
