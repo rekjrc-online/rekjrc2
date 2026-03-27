@@ -8,11 +8,21 @@
     {{ form.as_p }}
     <button type="submit">Login</button>
   </form>
+
+  <hr />
+
   <p>
     <center>
       Don't have an account?<br />
       <a href="{% url 'accounts:register' %}">Register here</a>
     </center>
   </p>
+
+  <hr />
+
+  <form method="get" action="{% url 'oidc_authentication_init' %}">
+    <button type="submit">Log in with Okta</button>
+  </form>
+
 </div>
 {% endblock %}
