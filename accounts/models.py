@@ -11,9 +11,12 @@ import json
 import os
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        email = email or username
         if not email:
             raise ValueError("Email is required")
+        extra_fields.pop('email', None)
+        extra_fields.pop('username', None)
         email = self.normalize_email(email).lower()
         user = self.model(email=email, username=email, **extra_fields)
         user.set_password(password)
