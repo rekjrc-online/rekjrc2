@@ -4,6 +4,7 @@ from django.urls import reverse
 from PIL import Image, ImageDraw, ImageFont
 from rekjrc.base_models import BaseModel, Ownable
 from clubs.models import Club
+from devices.models import Device
 from events.models import Event
 from locations.models import Location
 from teams.models import Team
@@ -15,14 +16,15 @@ import os
 class Race(BaseModel, Ownable):
     RACE_TYPE_CHOICES = [
         ('Lap Race',        'Lap Race'),
-        ('Drag Race',       'Drag Race'),
         ('Crawler Comp',    'Crawler Comp'),
         ('Stopwatch Race',  'Stopwatch Race'),
         ('Long Jump',       'Long Jump'),
         ('Top Speed',       'Top Speed'),
         ('Judged Event',    'Judged Event'),
-        ('Round Robin',     'Round Robin'),
-        ('Swiss System',    'Swiss System'), ]
+        ('Drag Race',       'Drag Single Elimination'),
+        ('Drag Double',     'Drag Double Elimination'),
+        ('Round Robin',     'Drag Round Robin'),
+        ('Swiss System',    'Drag Swiss System'), ]
     race_type = models.CharField(
         max_length=30,
         choices=RACE_TYPE_CHOICES,
@@ -82,6 +84,13 @@ class Race(BaseModel, Ownable):
         ('LapMonitor','LapMonitor'),
         ('MyLaps','MyLaps') ]
     transponder = models.CharField(max_length=10, choices=TRANSPONDER_CHOICES, blank=True, null=True)
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.SET_NULL,
+        related_name='races',
+        null=True,
+        blank=True,
+        help_text='Single device used for the whole race (e.g. radar gun for Top Speed)')
     entry_locked = models.BooleanField(default=False)
     race_finished = models.BooleanField(default=False)
 
@@ -191,3 +200,32 @@ class RaceDriver(BaseModel):
 
     def __str__(self):
         return f"Driver: {self.driver or '-driver-'} - Build: {self.build or '-build-'}"
+
+
+class RaceJudgeDevice(BaseModel):
+    """
+    Maps a device to a specific judge for a judged race.
+    Each judge on the judge_team can have their own device.
+    """
+    race = models.ForeignKey(
+        Race,
+        on_delete=models.CASCADE,
+        related_name='judge_devices')
+    judge = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='judge_devices')
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name='judge_assignments')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['race', 'judge'],
+                name='unique_device_per_judge_per_race')
+        ]
+
+    def __str__(self):
+        return f"{self.judge} → {self.device} @ {self.race}"

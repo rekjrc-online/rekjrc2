@@ -414,3 +414,8 @@ form button[type="submit"]:hover {
         max-width: 100% !important;
     }
 }
+
+.winner-btn[disabled] {
+    opacity: 1;
+    cursor: default;
+}

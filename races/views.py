@@ -8,7 +8,8 @@ from builds.models import Build
 from crud.views import CrudContextMixin, CrudAuthMixin
 from drivers.models import Driver
 from races.models import Race
-from .models import Race, RaceDriver
+from .forms import RaceForm, RaceJudgeDeviceForm
+from .models import Race, RaceDriver, RaceJudgeDevice
 
 class Start_(View):
     def get(self, request, *args, **kwargs):
@@ -18,6 +19,8 @@ class Start_(View):
                 return redirect("laprace:start", race_uuid=race.uuid)
             case "Drag Race":
                 return redirect("dragrace:start", race_uuid=race.uuid)
+            case "Drag Double":
+                return redirect("dragdouble:start", race_uuid=race.uuid)
             case "Crawler Comp":
                 return redirect("crawler:start", race_uuid=race.uuid)
             case "Stopwatch Race":
@@ -66,17 +69,28 @@ class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Race
-    fields = "__all__"
+    form_class = RaceForm
     action = "Create"
     template_name = "crud/form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+
 class Update_(CrudAuthMixin, CrudContextMixin, UpdateView):
     model = Race
-    fields = "__all__"
+    form_class = RaceForm
     action = "Edit"
     template_name = "crud/form.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
 class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
     model = Race
@@ -131,3 +145,35 @@ class Lock_(LoginRequiredMixin, View):
             race.entry_locked=True
         race.save()
         return redirect("races:detail", uuid=uuid)
+
+
+class JudgeDeviceAdd_(LoginRequiredMixin, View):
+    """Assign a device to a judge for a judged race."""
+    template_name = "races/judge_devices.html"
+
+    def get(self, request, uuid):
+        race = get_object_or_404(Race, uuid=uuid, owner=request.user)
+        assignments = RaceJudgeDevice.objects.filter(race=race).select_related('judge', 'device')
+        form = RaceJudgeDeviceForm(race=race, user=request.user)
+        return render(request, self.template_name, {
+            'race': race,
+            'form': form,
+            'assignments': assignments,
+        })
+
+    def post(self, request, uuid):
+        race = get_object_or_404(Race, uuid=uuid, owner=request.user)
+        form = RaceJudgeDeviceForm(request.POST, race=race, user=request.user)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.race = race
+            assignment.save()
+        return redirect('races:judge-device-add', uuid=uuid)
+
+
+class JudgeDeviceRemove_(LoginRequiredMixin, View):
+    """Remove a judge device assignment."""
+    def post(self, request, uuid, assignment_id):
+        race = get_object_or_404(Race, uuid=uuid, owner=request.user)
+        RaceJudgeDevice.objects.filter(id=assignment_id, race=race).delete()
+        return redirect('races:judge-device-add', uuid=uuid)

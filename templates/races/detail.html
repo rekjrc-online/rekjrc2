@@ -65,11 +65,23 @@
   <h4>{{ object.judge_team }}</h4>
   <ul>
     {% for member in object.judge_team.members.all %}
-      <li>{{ member.user.get_full_name|default:member.user.username }}</li>
+      {% with assignment=member.user.judge_devices.filter|dictsort:"race" %}
+      <li>
+        {{ member.user.get_full_name|default:member.user.username }}
+        {% for a in object.judge_devices.all %}
+          {% if a.judge == member.user %}
+            — <small>{{ a.device }}</small>
+          {% endif %}
+        {% endfor %}
+      </li>
+      {% endwith %}
     {% empty %}
       <li><em>No judges assigned yet</em></li>
     {% endfor %}
   </ul>
+  {% if is_owner %}
+    <a href="{% url 'races:judge-device-add' uuid=object.uuid %}" class="button">Manage Judge Devices</a>
+  {% endif %}
 </div>
 {% endif %}
 

@@ -98,6 +98,12 @@ button:disabled {
     {{ racedriver.build }}
 </h2>
 
+{% if judge_device %}
+<div style="color: #39ff14; font-size: 0.85rem; margin-bottom: 0.5rem;">
+    📡 {{ judge_device.device.name }} ({{ judge_device.device.mac }})
+</div>
+{% endif %}
+
 <div class="timers">
     <div>
         <div class="lcd-display" id="elapsedDisplay">0</div>

@@ -30,7 +30,9 @@ class Race_(LoginRequiredMixin, View):
         return render(request, self.template_name, {
             'race': race,
             'racedriver': racedriver,
-            'run': run })
+            'run': run,
+            'device': race.device,
+        })
 
     def post(self, request, race_uuid, racedriver_uuid):
         race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)

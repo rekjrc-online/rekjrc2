@@ -1,6 +1,8 @@
 from django.apps import apps
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Exists, OuterRef
 from django.http import JsonResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
@@ -8,17 +10,31 @@ from django.views import View
 from django.views.generic import DetailView, CreateView
 from rekjrc.base_models import Ownable
 from .forms import PostForm
-from .models import Post
+from .models import Post, PostLike
+
+
+def _annotate_liked(queryset, user):
+    """Annotate a Post queryset with liked_by_user for the given user."""
+    if user and user.is_authenticated:
+        return queryset.annotate(
+            liked_by_user=Exists(
+                PostLike.objects.filter(post=OuterRef("pk"), user=user)
+            )
+        )
+    return queryset
+
 
 def homepage(request):
     page = int(request.GET.get("page", 1))
     posts_per_page = 5
     start = (page - 1) * posts_per_page
     end = start + posts_per_page
-    posts = Post.objects.all().order_by("-created_at")[start:end]
+    posts = _annotate_liked(
+        Post.objects.all().order_by("-created_at"), request.user
+    )[start:end]
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        html = render_to_string("posts/list.html", {"posts": posts})
-        end_reached = posts.count() < posts_per_page
+        html = render_to_string("posts/list.html", {"posts": posts}, request=request)
+        end_reached = len(posts) < posts_per_page
         return JsonResponse({"html": html, "end": end_reached})
     return render(request, "homepage.html", {"posts": posts})
 
@@ -118,13 +134,23 @@ class PostRepliesAjax(View):
         }
         return JsonResponse(data)
 
+@login_required
 def toggle_like_ajax(request, post_uuid):
     if request.method != "POST":
         return HttpResponseNotAllowed(["POST"])
     post = get_object_or_404(Post, uuid=post_uuid)
+    like, created = PostLike.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        # Already liked — remove it
+        like.delete()
+        liked = False
+    else:
+        liked = True
     return JsonResponse({
         "success": True,
         "post_uuid": str(post.uuid),
+        "liked": liked,
+        "likes_count": post.likes_count,
     })
 
 
@@ -151,10 +177,13 @@ class ObjectPostsAjax(View):
 
         obj = get_object_or_404(model, uuid=uuid)
         content_type = CT.objects.get_for_model(model)
-        qs = Post.objects.filter(
-            author_content_type=content_type,
-            author_object_id=obj.id,
-        ).order_by("-created_at")
+        qs = _annotate_liked(
+            Post.objects.filter(
+                author_content_type=content_type,
+                author_object_id=obj.id,
+            ).order_by("-created_at"),
+            request.user,
+        )
 
         page_num = int(request.GET.get("page", 1))
         paginator = Paginator(qs, self.POSTS_PER_PAGE)

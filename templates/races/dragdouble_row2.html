@@ -1,0 +1,30 @@
+{% load dict_extras %}
+<div class="match-row text-center mb-2">
+    <div class="btn-wrapper my-1">
+        <button type="button"
+                class="winner-btn btn btn-success active"
+                {% if match.winner %}disabled{% endif %}
+                data-round-id="{{ match.id }}"
+                data-model-id="{{ match.model1.id }}">
+            {% if match.winner.id == match.model1.id %}🏁{% endif %}
+            {{ match.model1.driver }}
+            - {{ match.model1.build }}
+            ({{ match.model1_record }})
+            {% if match.winner.id == match.model1.id %}🏁{% endif %}
+        </button>
+    </div>
+    <div class="btn-wrapper my-1">
+        <button type="button"
+                class="winner-btn btn btn-success active"
+                {% if match.winner %}disabled{% endif %}
+                data-round-id="{{ match.id }}"
+                data-model-id="{{ match.model2.id }}">
+            {% if match.winner.id == match.model2.id %}🏁{% endif %}
+            {{ match.model2.driver }}
+            - {{ match.model2.build }}
+            ({{ match.model2_record }})
+            {% if match.winner.id == match.model2.id %}🏁{% endif %}
+        </button>
+    </div>
+    <hr>
+</div>

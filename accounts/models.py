@@ -11,12 +11,10 @@ import json
 import os
 
 class UserManager(BaseUserManager):
-    def create_user(self, username, email=None, password=None, **extra_fields):
-        email = email or username
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
-        extra_fields.pop('email', None)
-        extra_fields.pop('username', None)
+        extra_fields.pop("username", None)
         email = self.normalize_email(email).lower()
         user = self.model(email=email, username=email, **extra_fields)
         user.set_password(password)
@@ -26,7 +24,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        return self.create_user(email, password, **extra_fields)
+        return self.create_user(email, password=password, **extra_fields)
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)

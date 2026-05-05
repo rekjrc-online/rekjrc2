@@ -6,7 +6,7 @@ from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from posts.models import Post
-from races.models import Race, RaceDriver
+from races.models import Race, RaceDriver, RaceJudgeDevice
 from .models import JudgedScore
 
 
@@ -71,9 +71,13 @@ class Judge_(LoginRequiredMixin, View):
         racedriver = get_object_or_404(RaceDriver, id=racedriver_id, race=race)
         if JudgedScore.objects.filter(race=race, racedriver=racedriver, judge=request.user).exists():
             return redirect("judged:start", race_uuid=race.uuid)
+        judge_device = RaceJudgeDevice.objects.filter(
+            race=race, judge=request.user
+        ).select_related('device').first()
         return render(request, self.template_name, {
             "race": race,
             "racedriver": racedriver,
+            "judge_device": judge_device,
         })
 
     def post(self, request, race_uuid, racedriver_id):

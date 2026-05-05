@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+{% block content %}
+
+<div class="panel text-center">
+    <h3>Drag Double Elimination</h3>
+</div>
+
+<div class="panel text-center">
+<form method="post" id="drag-double-form">
+    {% csrf_token %}
+
+    {% if winners_matches %}
+        <div class="bracket-panel mb-4">
+            <h4 class="text-center">Win Bracket</h4>
+            {% regroup winners_matches by round_number as round_groups %}
+            {% for round_group in round_groups %}
+                <div class="round-panel mb-3">
+                    <h5 class="text-center">Round {{ round_group.grouper }}</h5>
+                    {% for match in round_group.list %}
+                        {% if match.winner %}
+                            {% include "races/dragdouble_row2.html" with match=match record_map=record_map %}
+                        {% else %}
+                            {% include "races/dragdouble_row.html" with match=match record_map=record_map %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if losers_matches %}
+        <div class="bracket-panel mb-4">
+            <h4 class="text-center">Loss Bracket</h4>
+            {% regroup losers_matches by round_number as round_groups %}
+            {% for round_group in round_groups %}
+                <div class="round-panel mb-3">
+                    <h5 class="text-center">Round {{ round_group.grouper }}</h5>
+                    {% for match in round_group.list %}
+                        {% if match.winner %}
+                            {% include "races/dragdouble_row2.html" with match=match record_map=record_map %}
+                        {% else %}
+                            {% include "races/dragdouble_row.html" with match=match record_map=record_map %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if finals_matches %}
+        <div class="bracket-panel mb-4">
+            <h4 class="text-center">Finals</h4>
+            {% regroup finals_matches by round_number as round_groups %}
+            {% for round_group in round_groups %}
+                <div class="round-panel mb-3">
+                    <h5 class="text-center">Final{% if round_group.grouper > 1 %} (Reset){% endif %}</h5>
+                    {% for match in round_group.list %}
+                        {% if match.winner %}
+                            {% include "races/dragdouble_row2.html" with match=match record_map=record_map %}
+                        {% else %}
+                            {% include "races/dragdouble_row.html" with match=match record_map=record_map %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if not final_winner %}
+        <div class="mt-3 text-center">
+            <button type="submit" class="submit-btn btn btn-primary">
+                Save Winners
+            </button>
+        </div>
+    {% endif %}
+</form>
+
+{% if final_winner %}
+    <div class="alert alert-success text-center mt-3">
+        <strong>🏆 Tournament Winner: {{ final_winner.driver }} - {{ final_winner.build }}</strong>
+    </div>
+    <form method="post" action="{% url 'dragdouble:finish' race.uuid %}" class="text-center mt-3">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">
+            Complete Race &amp; Post Result
+        </button>
+    </form>
+{% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('.winner-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.disabled) return;
+
+            const roundId = btn.dataset.roundId;
+            const modelId = btn.dataset.modelId;
+
+            document.getElementById(`winner_${roundId}`).value = modelId;
+
+            // Toggle styles for all buttons in this match
+            document.querySelectorAll(`.winner-btn[data-round-id='${roundId}']`).forEach(b => {
+                b.classList.remove('btn-success', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success', 'active');
+        });
+    });
+});
+</script>
+
+{% endblock %}

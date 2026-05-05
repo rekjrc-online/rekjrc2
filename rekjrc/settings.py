@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "mozilla_django_oidc", #okta
 
     # Ownable apps
+    "devices",
     "builds",
     "clubs",
     "drivers",
@@ -74,6 +75,7 @@ INSTALLED_APPS = [
     # Event apps
     "crawler",
     "dragrace",
+    "dragdouble",
     "judged",
     "longjump",
     "stopwatch",
