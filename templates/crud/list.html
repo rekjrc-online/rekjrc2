@@ -7,7 +7,9 @@
   {% if not object_list %}
     - No entries -<br />
   {% endif %}
-  <a href="create">Create New</a>
+  {% block list_actions %}
+    <a href="create">Create New</a>
+  {% endblock %}
 </div>
 
 {% if object_list %}

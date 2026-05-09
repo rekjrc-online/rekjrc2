@@ -1,26 +1,68 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from rekjrc.base_models import BaseModel
 
-class Device(models.Model):
+class Device(BaseModel):
     mac         = models.CharField(max_length=17, unique=True)  # "AA:BB:CC:DD:EE:FF"
     name        = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    owner_user  = models.ForeignKey(
-                      settings.AUTH_USER_MODEL,
-                      on_delete=models.SET_NULL,
-                      null=True, blank=True,
-                      related_name='devices')
-    owner_team  = models.ForeignKey(
-                      'teams.Team',
-                      on_delete=models.SET_NULL,
-                      null=True, blank=True,
-                      related_name='devices')
-    created_at  = models.DateTimeField(auto_now_add=True)
-    updated_at  = models.DateTimeField(auto_now=True)
+    # GFK "owner" — the entity that owns this device for assignment / racing.
+    # Allowable target models: User, Team, Club, Location.
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='owned_devices')
+    object_id    = models.PositiveIntegerField(null=True, blank=True)
+    owner        = GenericForeignKey('content_type', 'object_id')
+
+    # The human who claimed this device. Distinct from `owner` because a device
+    # may be owned by a Club/Team/Location, but a single user performed the claim
+    # (used for audit + permission to re-assign).
+    claimed_by   = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='claimed_devices')
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['content_type', 'object_id']),
+        ]
 
     def __str__(self):
         return f"{self.name} ({self.mac})"
+
+    def get_absolute_url(self):
+        return reverse("devices:detail", kwargs={"uuid": self.uuid})
+
+    @property
+    def is_unlinked(self):
+        """True if this device has no GFK owner set yet."""
+        return self.content_type_id is None
+
+    @property
+    def owner_type(self):
+        """Lowercase model name of the owner (e.g. 'club'), or None if unlinked."""
+        if self.content_type_id is None:
+            return None
+        return self.content_type.model
+
+    @property
+    def owner_display(self):
+        """Human-readable label for the owner, or '' if unlinked / dangling."""
+        owner = self.owner
+        if owner is None:
+            return ''
+        # Ownable subclasses expose display_name; User has get_full_name / email.
+        return getattr(owner, 'display_name', None) \
+            or getattr(owner, 'get_full_name', lambda: '')() \
+            or getattr(owner, 'email', '') \
+            or str(owner)
 
 class DevicePayload(models.Model):
     device          = models.ForeignKey(

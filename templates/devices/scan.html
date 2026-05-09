@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/devices/scan.html -->
+
+<div class="panel" style="text-align:center;">
+  <h3>Scan / Claim Device</h3>
+  <p class="muted">
+    Devices below have been seen by the system but aren't linked to anyone yet.
+    Pick one, choose where to assign it, and click Claim.
+  </p>
+</div>
+
+{% if messages %}
+  <div class="panel">
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="panel">
+  {% if unlinked_devices %}
+    <h4 style="text-align:center;">Unlinked Devices</h4>
+    <table align="center" cellpadding="5" cellspacing="0" id="unlinked-devices-table">
+      <thead>
+        <tr>
+          <th>&nbsp;</th>
+          <th align="left">Name</th>
+          <th align="left">MAC</th>
+          <th align="left">First seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in unlinked_devices %}
+          <tr class="bgmouse unlinked-device-row" data-device-id="{{ device.id }}" style="cursor:pointer;">
+            <td><input type="radio" name="device-pick" value="{{ device.id }}" /></td>
+            <td>{{ device.name }}</td>
+            <td><code>{{ device.mac }}</code></td>
+            <td>{{ device.created_at|date:"M d, Y H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="text-align:center;">- No unlinked devices to claim -</p>
+  {% endif %}
+</div>
+
+{% if unlinked_devices %}
+<div class="panel"><br />
+  <form method="post" id="claim-form">
+    {% csrf_token %}
+    <table align="center" cellpadding="5">
+      <tr>
+        <td colspan="2">
+          {{ form.device }}
+          {% if form.device.errors %}
+            <div class="error">{{ form.device.errors }}</div>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td>{{ form.owner.label_tag }}</td>
+        <td>
+          {{ form.owner }}
+          {% if form.owner.errors %}
+            <div class="error">{{ form.owner.errors }}</div>
+          {% endif %}
+        </td>
+      </tr>
+      {% if form.non_field_errors %}
+        <tr>
+          <td colspan="2"><div class="error">{{ form.non_field_errors }}</div></td>
+        </tr>
+      {% endif %}
+      <tr>
+        <td colspan="2" style="text-align:center;">
+          <button type="submit" id="claim-submit" disabled>Claim</button>
+          <span class="muted" id="claim-hint">Pick a device above first</span>
+        </td>
+      </tr>
+    </table>
+  </form>
+</div>
+{% endif %}
+
+<script>
+  (function () {
+    var rows       = document.querySelectorAll(".unlinked-device-row");
+    var hiddenFld  = document.querySelector("#id_device");
+    var submitBtn  = document.querySelector("#claim-submit");
+    var hint       = document.querySelector("#claim-hint");
+
+    function selectRow(row) {
+      rows.forEach(function (r) { r.classList.remove("selected"); });
+      row.classList.add("selected");
+      var radio = row.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+      if (hiddenFld) hiddenFld.value = row.dataset.deviceId;
+      if (submitBtn) submitBtn.disabled = false;
+      if (hint) hint.style.display = "none";
+    }
+
+    rows.forEach(function (row) {
+      row.addEventListener("click", function (e) {
+        // don't double-fire when the radio itself is clicked
+        if (e.target.tagName !== "INPUT") {
+          selectRow(row);
+        } else {
+          selectRow(row);
+        }
+      });
+    });
+  })();
+</script>
+
+{% endblock %}

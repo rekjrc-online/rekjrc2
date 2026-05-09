@@ -1,0 +1,7 @@
+{% extends "crud/list.html" %}
+
+{% block list_actions %}
+  <a href="{% url 'devices:create' %}">Create New</a>
+  &nbsp;|&nbsp;
+  <a href="{% url 'devices:scan' %}">Scan / Claim Device</a>
+{% endblock %}
