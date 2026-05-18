@@ -21,7 +21,6 @@ urlpatterns = [
     path('pages/', include(('pages.urls', 'pages'), namespace='pages')),
     path('posts/', include(('posts.urls', 'posts'), namespace='posts')),
     path('chat/', include(('chat_app.urls', 'chat_app'), namespace='chat')),
-    path('oidc/', include('mozilla_django_oidc.urls')),
 
     path('u/', include(('urls_app.urls', 'urls_app'), namespace='urls_app')),
     # path('sponsors/', include(('sponsors.urls', 'sponsors'), namespace='sponsors')),

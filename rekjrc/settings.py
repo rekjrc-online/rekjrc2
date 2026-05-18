@@ -57,8 +57,6 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'widget_tweaks',
     "rest_framework",
-    "mozilla_django_oidc", #okta
-
     # Ownable apps
     "devices",
     "builds",
@@ -210,17 +208,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 AUTHENTICATION_BACKENDS = [
     "accounts.backends.EmailBackend",
-    #"mozilla_django_oidc.auth.OIDCAuthenticationBackend",
-    "accounts.auth.CustomOIDCBackend",
 ]
-OIDC_RP_CLIENT_ID              = env('OKTA_CLIENT_ID')
-OIDC_RP_CLIENT_SECRET          = env('OKTA_CLIENT_SECRET')
-OIDC_RP_SIGN_ALGO              = 'RS256'
-OIDC_RP_SCOPES                 = 'openid email profile'
-OIDC_OP_JWKS_ENDPOINT          = 'https://trial-6848785.okta.com/oauth2/default/v1/keys'
-OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://trial-6848785.okta.com/oauth2/default/v1/authorize'
-OIDC_OP_TOKEN_ENDPOINT         = 'https://trial-6848785.okta.com/oauth2/default/v1/token'
-OIDC_OP_USER_ENDPOINT          = 'https://trial-6848785.okta.com/oauth2/default/v1/userinfo'
 
 # ------------------------------
 # Login/Logout redirect
@@ -253,5 +241,5 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {"mozilla_django_oidc": {"handlers": ["console"], "level": "DEBUG"}},
+    "loggers": {},
 }
