@@ -43,7 +43,8 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self._generate_qr()
+        from accounts.tasks import generate_user_qr
+        generate_user_qr.delay(self.pk)
 
     def _generate_qr(self):
         qr_payload = {

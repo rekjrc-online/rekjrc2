@@ -64,6 +64,33 @@ class Device(BaseModel):
             or getattr(owner, 'email', '') \
             or str(owner)
 
+class DeviceWhitelist(models.Model):
+    """
+    MAC addresses pre-approved to self-publish an unclaimed Device row via
+    the Go gateway's self-publish endpoint (gateway.rekjrc.com/device/publish/),
+    triggered from the ESP32 Universal Keypad's Settings -> Show Owner ->
+    Publish flow. Deliberately populated by hand (admin) only — this is the
+    gate that stops an arbitrary/spoofed MAC from creating device rows.
+    Presence on this list does not claim or own a device; it only allows the
+    bare unclaimed row to be created so a logged-in Django user can claim it
+    via the existing Scan flow (devices:scan).
+    """
+    mac        = models.CharField(max_length=17, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Device whitelist entry"
+        verbose_name_plural = "Device whitelist"
+        ordering = ["mac"]
+
+    def __str__(self):
+        return self.mac
+
+    def save(self, *args, **kwargs):
+        self.mac = self.mac.upper().strip()
+        super().save(*args, **kwargs)
+
+
 class DevicePayload(models.Model):
     device          = models.ForeignKey(
                           Device,

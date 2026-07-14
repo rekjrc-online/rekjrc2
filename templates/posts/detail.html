@@ -11,12 +11,12 @@
         {% if post.author.avatar %}
           <img src="{{ post.author.avatar.url }}" alt="{{ post.author.display_name }}" class="avatar" />
         {% else %}
-          <img src="/static/nophoto_{{ post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+          <img src="/static/nophoto_{{ post.author_content_type.model|upper }}.png" alt="Avatar" class="avatar" />
         {% endif %}
       </td>
       <td>
         <strong>
-          <a href="/{{ post.author_content_type.model }}s/{{ post.author.uuid }}/">
+          <a href="/{{ post.author_content_type.model|upper }}s/{{ post.author.uuid }}/">
             {{ post.author_content_type.name|title }} -
             <span style="color: var(--text-link-hover)"> {{ post.author.display_name }} </span>
           </a>
@@ -46,7 +46,7 @@
                   {% if parent_post.author.avatar %}
                     <img src="{{ parent_post.author.avatar.url }}" alt="{{ parent_post.author.display_name }}" class="avatar" />
                   {% else %}
-                    <img src="/static/nophoto_{{ parent_post.author_content_type.model }}.png" alt="Avatar" class="avatar" />
+                    <img src="/static/nophoto_{{ parent_post.author_content_type.model|upper }}.png" alt="Avatar" class="avatar" />
                   {% endif %}
                 </td>
                 <td>

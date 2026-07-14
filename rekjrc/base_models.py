@@ -1,7 +1,6 @@
-from PIL import Image
-import uuid
 from django.conf import settings
 from django.db import models
+import uuid
 
 class BaseModel(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -13,7 +12,7 @@ class BaseModel(models.Model):
 
 class Ownable(models.Model):
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # string ref avoids AppRegistryNotReady on startup
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="%(class)s_owned")
     display_name = models.CharField(max_length=255)
@@ -43,10 +42,10 @@ class Ownable(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if self.avatar and hasattr(self.avatar, "path"):
-            try:
-                img = Image.open(self.avatar.path)
-                img.thumbnail((300, 300))
-                img.save(self.avatar.path, optimize=True, quality=85)
-            except Exception as e:
-                print("Avatar resize failed:", e)
+        if self.avatar:
+            from rekjrc.tasks import resize_avatar
+            resize_avatar.delay(
+                self._meta.app_label,
+                self._meta.model_name,
+                self.pk,
+            )

@@ -40,6 +40,12 @@ STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 
 # ------------------------------
+# Celery Setup
+# ------------------------------
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+# ------------------------------
 # Installed Apps
 # ------------------------------
 INSTALLED_APPS = [

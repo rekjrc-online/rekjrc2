@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Device, DevicePayload
+from .models import Device, DevicePayload, DeviceWhitelist
 
 
 @admin.register(Device)
@@ -24,6 +24,14 @@ class DeviceAdmin(admin.ModelAdmin):
     @admin.display(description="Owner type", ordering="content_type")
     def owner_type(self, obj):
         return obj.owner_type or "—"
+
+
+@admin.register(DeviceWhitelist)
+class DeviceWhitelistAdmin(admin.ModelAdmin):
+    list_display = ("mac", "created_at")
+    search_fields = ("mac",)
+    ordering = ("mac",)
+    readonly_fields = ("created_at",)
 
 
 @admin.register(DevicePayload)
