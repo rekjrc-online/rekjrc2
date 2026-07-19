@@ -116,7 +116,14 @@ class Join_(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, uuid):
-        race = get_object_or_404(Race.for_user(request.user), uuid=uuid)
+        # NOT Race.for_user(request.user) -- that's owner/judge-scoped and
+        # would 404 for the exact people this view exists for: a
+        # participant who is neither the race owner nor a judge, joining
+        # via the QR code Race.save() generates (races/<uuid>/join). GET
+        # above already fetches the race unrestricted for the same reason;
+        # POST used to disagree with it, which broke self-registration for
+        # everyone except the organizer.
+        race = get_object_or_404(Race, uuid=uuid)
         if race.entry_locked==True:
             return redirect("races:detail", uuid=uuid)
         driver_uuid = request.POST.get("driver_uuid")

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/events/checkin.html -->
+
+<div class="panel" style="text-align:center;">
+  <h3>Event Check-in – {{ event.display_name }}</h3>
+  <p class="muted">
+    Search for the participant's account, pick it, then scan or type their
+    RFID lanyard code and click Link. Re-scanning a code already linked
+    today just re-points it to whoever you pick.
+  </p>
+</div>
+
+{% if messages %}
+  <div class="panel">
+    {% for message in messages %}
+      <p>{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="panel">
+  <form method="get" style="text-align:center;" id="search-form">
+    <input type="text" name="q" id="search-input" value="{{ query }}" placeholder="Search name or email" autofocus />
+    <button type="submit">Search</button>
+    <button type="button" id="scan-qr-btn">Scan account QR</button>
+  </form>
+
+  <div id="qr-scan-panel" style="display:none; text-align:center; margin-top:10px;">
+    <video id="qr-video" muted playsinline style="max-width:320px; width:100%;"></video>
+    <canvas id="qr-canvas" style="display:none;"></canvas>
+    <p class="muted" id="qr-scan-status">Point the camera at the account QR code (visible at /accounts/).</p>
+    <button type="button" id="qr-cancel-btn">Cancel scan</button>
+  </div>
+
+  {% if query %}
+    <table align="center" cellpadding="5" cellspacing="0" id="user-results-table">
+      <thead>
+        <tr>
+          <th>&nbsp;</th>
+          <th align="left">Name</th>
+          <th align="left">Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in user_results %}
+          <tr class="bgmouse user-result-row" data-user-id="{{ u.id }}"
+              data-user-label="{{ u.get_full_name|default:u.email }}" style="cursor:pointer;">
+            <td><input type="radio" name="user-pick" value="{{ u.id }}" /></td>
+            <td>{{ u.get_full_name|default:"-" }}</td>
+            <td>{{ u.email }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" style="text-align:center;"><em>No matching accounts</em></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+<div class="panel" style="text-align:center;">
+  <label for="rfid-device-select">Handheld scanning as:</label>
+  <select id="rfid-device-select">
+    <option value="">-- not listening --</option>
+    {% for d in devices %}
+      <option value="{{ d.uuid }}">{{ d.name }}</option>
+    {% endfor %}
+  </select>
+  <span class="muted" id="rfid-poll-status"></span>
+  <p class="muted">
+    Pick the Universal Keypad you're scanning lanyards with (main menu ->
+    A=Event Checkin on the device) and its scans will fill the card field
+    below automatically -- you still pick the account and click Link card
+    yourself.
+  </p>
+</div>
+
+<div class="panel"><br />
+  <form method="post" id="checkin-form">
+    {% csrf_token %}
+    <table align="center" cellpadding="5">
+      <tr>
+        <td colspan="2" style="text-align:center;">
+          Selected: <span id="selected-user-label">none</span>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">{{ form.user }}</td>
+      </tr>
+      <tr>
+        <td>{{ form.rfid_code.label_tag }}</td>
+        <td>
+          {{ form.rfid_code }}
+          {% if form.rfid_code.errors %}
+            <div class="error">{{ form.rfid_code.errors }}</div>
+          {% endif %}
+        </td>
+      </tr>
+      {% if form.non_field_errors %}
+        <tr>
+          <td colspan="2"><div class="error">{{ form.non_field_errors }}</div></td>
+        </tr>
+      {% endif %}
+      <tr>
+        <td colspan="2" style="text-align:center;">
+          <button type="submit" id="checkin-submit" disabled>Link card</button>
+          <span class="muted" id="checkin-hint">Pick an account above first</span>
+        </td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+<div class="panel">
+  <h4 style="text-align:center;">Checked in today</h4>
+  {% if checkins %}
+    <table align="center" cellpadding="5" cellspacing="0">
+      <thead>
+        <tr>
+          <th align="left">Card</th>
+          <th align="left">Account</th>
+          <th align="left">Checked in</th>
+          <th>&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in checkins %}
+          <tr>
+            <td><code>{{ c.rfid_code }}</code></td>
+            <td>{{ c.user.get_full_name|default:c.user.email }}</td>
+            <td>{{ c.created_at|date:"M d, Y H:i" }}</td>
+            <td>
+              <a href="{% url 'events:checkin-remove' event.uuid c.id %}">revoke</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="text-align:center;">- No check-ins yet -</p>
+  {% endif %}
+</div>
+
+<script>
+  (function () {
+    var rows      = document.querySelectorAll(".user-result-row");
+    var hiddenFld = document.querySelector("#id_user");
+    var submitBtn = document.querySelector("#checkin-submit");
+    var hint      = document.querySelector("#checkin-hint");
+    var label     = document.querySelector("#selected-user-label");
+
+    function selectRow(row) {
+      rows.forEach(function (r) { r.classList.remove("selected"); });
+      row.classList.add("selected");
+      var radio = row.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+      if (hiddenFld) hiddenFld.value = row.dataset.userId;
+      if (submitBtn) submitBtn.disabled = false;
+      if (hint) hint.style.display = "none";
+      if (label) label.textContent = row.dataset.userLabel;
+    }
+
+    rows.forEach(function (row) {
+      row.addEventListener("click", function () { selectRow(row); });
+    });
+
+    // A QR-triggered search (?scanned=1) that landed on exactly one match
+    // gets auto-selected, same as clicking that row -- a manually typed
+    // search never does this (see events.views.Checkin_.get_context_data).
+    {% if scanned and user_results|length == 1 %}
+      if (rows.length === 1) selectRow(rows[0]);
+    {% endif %}
+  })();
+</script>
+
+<!-- jsQR: pure-JS QR decoder, reads frames off the camera video via canvas.
+     No server round-trip needed to decode -- only the extracted uuid is
+     ever sent, as a normal ?q= search (see Checkin_.get_context_data). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<script>
+  (function () {
+    var scanBtn    = document.querySelector("#scan-qr-btn");
+    var scanPanel  = document.querySelector("#qr-scan-panel");
+    var video      = document.querySelector("#qr-video");
+    var canvas     = document.querySelector("#qr-canvas");
+    var scanStatus = document.querySelector("#qr-scan-status");
+    var cancelBtn  = document.querySelector("#qr-cancel-btn");
+    var searchForm = document.querySelector("#search-form");
+    var searchInput = document.querySelector("#search-input");
+
+    var stream = null;
+    var rafId  = null;
+
+    function stopScan() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      if (stream) {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        stream = null;
+      }
+      scanPanel.style.display = "none";
+    }
+
+    function handleDecoded(text) {
+      var payload;
+      try {
+        payload = JSON.parse(text);
+      } catch (e) {
+        scanStatus.textContent = "That doesn't look like an account QR code -- try again.";
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      // accounts.User._generate_qr() encodes {"uuid": "...", "type": "user"}
+      // (accounts/models.py) -- reject anything else (e.g. a race's QR,
+      // which encodes a plain URL string and would already have failed
+      // JSON.parse above, or some future non-account QR type).
+      if (!payload.uuid || (payload.type && payload.type !== "user")) {
+        scanStatus.textContent = "That doesn't look like an account QR code -- try again.";
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      stopScan();
+      searchInput.value = payload.uuid;
+      var scannedFld = document.createElement("input");
+      scannedFld.type = "hidden";
+      scannedFld.name = "scanned";
+      scannedFld.value = "1";
+      searchForm.appendChild(scannedFld);
+      searchForm.submit();
+    }
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var ctx2d = canvas.getContext("2d");
+        ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var imageData = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
+        var code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          handleDecoded(code.data);
+          return;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    if (scanBtn) {
+      scanBtn.addEventListener("click", function () {
+        scanPanel.style.display = "block";
+        // Camera access needs a secure context -- HTTPS, or localhost
+        // during local dev -- browsers withhold navigator.mediaDevices
+        // entirely on plain HTTP anywhere else, so this has to be checked
+        // before calling getUserMedia rather than relying on its .catch()
+        // (a missing mediaDevices throws synchronously, uncaught).
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          scanStatus.textContent = "Camera access isn't available here -- this page needs to be loaded over HTTPS (or localhost).";
+          return;
+        }
+        scanStatus.textContent = "Point the camera at the account QR code (visible at /accounts/).";
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+          .then(function (s) {
+            stream = s;
+            video.srcObject = s;
+            video.play();
+            rafId = requestAnimationFrame(tick);
+          })
+          .catch(function (err) {
+            scanStatus.textContent = "Couldn't access the camera: " + err.message;
+          });
+      });
+    }
+
+    if (cancelBtn) cancelBtn.addEventListener("click", stopScan);
+    window.addEventListener("beforeunload", stopScan);
+  })();
+</script>
+
+<!-- RFID poll: bridges the Universal Keypad's Event Checkin firmware mode
+     (main menu -> A, rfid_checkin_mode.h) to this page -- that mode only
+     scans a lanyard and reports the UID to the normal ingest pipeline
+     (devices.DevicePayload, name="rfidscan"); it never picks an account.
+     Polling CheckinRfidPoll_ (events.views) while a device is selected
+     below fills the card field with whatever it last saw; the account
+     pick and the final "Link card" click stay manual. The selected
+     device is remembered in localStorage (keyed per event) so it
+     survives the plain page reloads a ?q= search does, instead of
+     resetting every time staff searches for the next attendee. -->
+<script>
+  (function () {
+    var select   = document.querySelector("#rfid-device-select");
+    var status   = document.querySelector("#rfid-poll-status");
+    var rfidFld  = document.querySelector("#id_rfid_code");
+    var pollUrl  = "{% url 'events:checkin-rfid-poll' event.uuid %}";
+    var storageKey = "rekjrc-checkin-device-{{ event.uuid }}";
+    var timer = null;
+
+    function stopPoll() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function poll() {
+      var deviceUuid = select.value;
+      if (!deviceUuid) { stopPoll(); status.textContent = ""; return; }
+      fetch(pollUrl + "?device=" + encodeURIComponent(deviceUuid))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.uid) {
+            rfidFld.value = data.uid;
+            status.textContent = "Scanned: " + data.uid;
+          } else {
+            status.textContent = "Listening for scans...";
+          }
+        })
+        .catch(function () {
+          status.textContent = "Poll failed -- retrying";
+        });
+    }
+
+    function startPoll() {
+      stopPoll();
+      if (!select.value) { status.textContent = ""; return; }
+      poll();
+      timer = setInterval(poll, 2000);
+    }
+
+    if (select && rfidFld) {
+      select.addEventListener("change", function () {
+        if (select.value) localStorage.setItem(storageKey, select.value);
+        else localStorage.removeItem(storageKey);
+        startPoll();
+      });
+
+      var saved = localStorage.getItem(storageKey);
+      if (saved && select.querySelector('option[value="' + saved + '"]')) {
+        select.value = saved;
+        startPoll();
+      }
+
+      window.addEventListener("beforeunload", stopPoll);
+    }
+  })();
+</script>
+
+{% endblock %}

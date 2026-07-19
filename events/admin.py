@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace
+from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace, EventCheckin
 
 class BaseEventInline(admin.TabularInline):
     extra = 0
@@ -33,6 +33,7 @@ class EventAdmin(admin.ModelAdmin):
         "event_date",
         "event_time",
         "event_days",
+        "staff_team",
         "is_active",
     )
 
@@ -45,6 +46,8 @@ class EventAdmin(admin.ModelAdmin):
         "is_active",
     )
 
+    autocomplete_fields = ("staff_team",)
+
     ordering = ("-event_date",)
 
     inlines = [
@@ -54,3 +57,28 @@ class EventAdmin(admin.ModelAdmin):
         EventStoreInline,
         EventRaceInline,
     ]
+
+@admin.register(EventCheckin)
+class EventCheckinAdmin(admin.ModelAdmin):
+    list_display = (
+        "rfid_code",
+        "user",
+        "event",
+        "checked_in_by",
+        "created_at",
+    )
+
+    search_fields = (
+        "rfid_code",
+        "user__email",
+        "user__first_name",
+        "user__last_name",
+    )
+
+    list_filter = (
+        "event",
+    )
+
+    autocomplete_fields = ("event", "user", "checked_in_by")
+
+    ordering = ("-created_at",)

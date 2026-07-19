@@ -1,8 +1,11 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.forms import ModelForm
 from django.apps import apps
 
 from .models import Event
+
+User = get_user_model()
 
 class EventForm(ModelForm):
     RELATED_CONFIG = {
@@ -106,3 +109,30 @@ class EventForm(ModelForm):
                     for obj in selected
                 ]
             )
+
+
+class EventCheckinForm(forms.Form):
+    """
+    Used by events.views.Checkin_ (the staff walk-up check-in page): staff
+    search for the participant's account (rendered as a clickable list —
+    see events/checkin.html), then scan/type the RFID lanyard code to link
+    it to that account for this event.
+    """
+    rfid_code = forms.CharField(
+        max_length=64,
+        label="RFID code",
+        widget=forms.TextInput(attrs={
+            "placeholder": "Scan or type the lanyard code",
+            "autofocus": True,
+            "autocomplete": "off",
+        }))
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        widget=forms.HiddenInput)
+
+    def __init__(self, *args, event=None, **kwargs):
+        self.event = event
+        super().__init__(*args, **kwargs)
+
+    def clean_rfid_code(self):
+        return self.cleaned_data["rfid_code"].strip().upper()

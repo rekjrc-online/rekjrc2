@@ -43,6 +43,9 @@
           {% if object.has_advanced %}
             <a href="delete" class="button button-danger">Delete</a>,
             <a href="advanced" class="button">Advanced</a>
+            {% if model_name == "event" %}
+              , <a href="checkin" class="button">Check-in</a>
+            {% endif %}
           {% else %}
             <a href="delete" class="button button-danger">Delete</a>
           {% endif %}
