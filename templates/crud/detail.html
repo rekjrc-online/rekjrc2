@@ -34,6 +34,12 @@
       <td align="left"><strong>Is Active</strong></td>
       <td align="left">{{ object.is_active }}</td>
     </tr>
+    {% if object.is_public is not None %}
+      <tr>
+        <td align="left"><strong>Publicly Viewable</strong></td>
+        <td align="left">{{ object.is_public }}</td>
+      </tr>
+    {% endif %}
     {% if is_owner %}
       <tr>
         <td colspan="2" align="left">

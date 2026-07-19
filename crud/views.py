@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import redirect_to_login
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from django.db.models import ForeignKey
@@ -8,6 +9,46 @@ DETAIL_POSTS_PER_PAGE = 5
 class CrudAuthMixin(LoginRequiredMixin):
     login_url = "/accounts/login/"
     redirect_field_name = "next"
+
+class PublicDetailMixin:
+    """
+    Use in place of CrudAuthMixin on a DetailView (alongside CrudContextMixin)
+    for "detail" pages that should be visible beyond just the object's owner.
+
+    Historically Detail_ views used CrudAuthMixin + CrudContextMixin, and
+    CrudContextMixin.get_queryset() restricts any model with an `owner`
+    field to the requesting user's own objects -- correct for Edit/Delete,
+    but it meant a detail page 404'd for any logged-in user who wasn't the
+    owner. This mixin fixes that: any logged-in user can view any object's
+    detail page.
+
+    Anonymous (logged-out) visitors additionally need the object's
+    `is_public` flag set True (see rekjrc.base_models.Ownable.is_public,
+    default False) -- otherwise they're redirected to log in, same as
+    CrudAuthMixin/LoginRequiredMixin would do. Models without an
+    `is_public` field (e.g. Device, which isn't Ownable) stay
+    login-required for everyone.
+
+    Owner-only actions on the same detail page (Edit/Delete/Advanced/
+    Check-in/etc.) are untouched by this -- those views still use
+    CrudAuthMixin + CrudContextMixin's owner-scoped get_queryset, and stay
+    hidden in templates behind the `is_owner` flag that
+    CrudContextMixin.get_context_data() computes per-object regardless of
+    which mixin the Detail_ view itself uses.
+    """
+    login_url = "/accounts/login/"
+    redirect_field_name = "next"
+
+    def get_queryset(self):
+        return self.model._default_manager.all()
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not request.user.is_authenticated and not getattr(self.object, "is_public", False):
+            return redirect_to_login(
+                request.get_full_path(), self.login_url, self.redirect_field_name)
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
 class CrudContextMixin:
     model_name = None
@@ -25,6 +66,7 @@ class CrudContextMixin:
 
     bottom_fields = [
         'is_active',
+        'is_public',
         'allow_followers',
         'enable_chat', ]
 

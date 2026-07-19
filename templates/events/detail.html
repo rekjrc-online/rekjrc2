@@ -4,7 +4,7 @@
         <h4>Races</h4>
         <ul>
             {% for race in object.event_races.all %}
-                <li>{{ race.race }}</li>
+                <li><a href="{% url 'races:detail' race.uuid %}">{{ race.race }}</a></li>
             {% endfor %}
         </ul>
     </div>

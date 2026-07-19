@@ -20,6 +20,15 @@ class Ownable(models.Model):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     allow_followers = models.BooleanField(default=True)
     enable_chat = models.BooleanField(default=False)
+    # Off by default: detail pages require login for everyone (any logged-in
+    # user can view any object, not just their own -- see crud.views
+    # PublicDetailMixin). Flipping this to True additionally lets
+    # anonymous/logged-out visitors view this specific object's detail page.
+    is_public = models.BooleanField(
+        default=False,
+        verbose_name="Publicly viewable",
+        help_text="Anyone can view this page without logging in.",
+    )
 
     class Meta:
         abstract = True

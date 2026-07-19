@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from accounts.models import User
-from crud.views import CrudContextMixin, CrudAuthMixin
+from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from .models import Club, ClubLocation, ClubMember, ClubTeam
 from .forms import ClubLocationForm
 
@@ -18,7 +18,7 @@ class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Club
     template_name = "crud/list.html"
 
-class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
+class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Club
     template_name = "crud/detail.html"
     slug_field = "uuid"

@@ -1,12 +1,12 @@
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from crud.views import CrudContextMixin, CrudAuthMixin
+from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from .models import Driver
 
 class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Driver
     template_name = "crud/list.html"
 
-class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
+class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Driver
     template_name = "crud/detail.html"
     slug_field = "uuid"

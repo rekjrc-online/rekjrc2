@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
-from crud.views import CrudContextMixin, CrudAuthMixin
+from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from devices.models import Device, DevicePayload
 from .forms import EventCheckinForm
 from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace, EventCheckin
@@ -38,26 +38,18 @@ class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Event
     template_name = "crud/list.html"
 
-class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
+class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Event
     template_name = "crud/detail.html"
     slug_field = "uuid"
     slug_url_kwarg = "uuid"
-
-    def get_queryset(self):
-        # Event detail is public to any logged-in user -- unlike most
-        # models, where CrudContextMixin.get_queryset() defaults to
-        # owner-only. Overriding it here (rather than changing that shared
-        # mixin) keeps every other owner-scoped model -- Race, Team, Club,
-        # and this same Event's own Update_/Delete_/Advanced_ below, which
-        # still rely on CrudContextMixin's default -- unaffected. The
-        # "Owner functions" block in crud/detail.html (Edit/Delete/
-        # Advanced/Check-in) is still gated by is_owner, computed
-        # per-object regardless of this queryset, so a non-owner viewing a
-        # public event simply won't see those buttons -- and the
-        # underlying Edit/Delete/Advanced endpoints stay protected since
-        # they never inherited this override.
-        return Event.objects.all()
+    # PublicDetailMixin now covers what this view used to override by hand:
+    # any logged-in user can view any Event, and (new) an anonymous visitor
+    # can too if the event's is_public flag is set. Update_/Delete_/
+    # Advanced_ below still use CrudAuthMixin + CrudContextMixin's
+    # owner-scoped default, and the "Owner functions" block in
+    # crud/detail.html stays gated by is_owner, so this doesn't loosen
+    # anything but read access to the detail page itself.
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Event

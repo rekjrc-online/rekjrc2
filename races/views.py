@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from builds.models import Build
-from crud.views import CrudContextMixin, CrudAuthMixin
+from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from drivers.models import Driver
 from races.models import Race
 from .forms import RaceForm, RaceJudgeDeviceForm
@@ -55,7 +55,7 @@ class List_(LoginRequiredMixin, View):
             'judge_races': judge_races,
         })
 
-class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
+class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Race
     template_name = "races/detail.html"
     slug_field = "uuid"

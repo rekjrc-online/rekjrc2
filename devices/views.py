@@ -62,7 +62,15 @@ class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
     slug_url_kwarg = "uuid"
 
     def get_queryset(self):
-        return _user_devices(self.request.user)
+        # Any logged-in user may view any device's detail page (this used
+        # to be scoped to _user_devices(), which 404'd the page for anyone
+        # who didn't claim/own the device -- the same bug as the other
+        # Detail_ views). Device isn't an Ownable model, so unlike
+        # Race/Team/Club/etc. there's no is_public flag/anonymous-access
+        # path here: MAC address and claim info stay behind login for
+        # everyone. Update_/Delete_ below still use _user_devices()/
+        # claimed_by scoping and are unaffected.
+        return Device.objects.all()
 
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):

@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from accounts.models import User
-from crud.views import CrudContextMixin, CrudAuthMixin
+from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from .models import Team, TeamMember
 
 class List_(CrudAuthMixin, CrudContextMixin, ListView):
@@ -15,7 +15,7 @@ class List_(CrudAuthMixin, CrudContextMixin, ListView):
         context['member_teams'] = Team.objects.filter(members__user=self.request.user).exclude(owner=self.request.user)
         return context
 
-class Detail_(CrudAuthMixin, CrudContextMixin, DetailView):
+class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Team
     template_name = "teams/detail.html"
     slug_field = "uuid"
