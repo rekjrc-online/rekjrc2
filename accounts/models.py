@@ -42,9 +42,11 @@ class User(AbstractUser):
         return self.email
 
     def save(self, *args, **kwargs):
+        is_new = self._state.adding
         super().save(*args, **kwargs)
-        from accounts.tasks import generate_user_qr
-        generate_user_qr.delay(self.pk)
+        if is_new:
+            from accounts.tasks import generate_user_qr
+            generate_user_qr.delay(self.pk)
 
     def _generate_qr(self):
         qr_payload = {
