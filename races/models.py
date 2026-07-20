@@ -82,7 +82,9 @@ class Race(BaseModel, Ownable):
         blank=True)
     TRANSPONDER_CHOICES = [
         ('LapMonitor','LapMonitor'),
-        ('MyLaps','MyLaps') ]
+        ('MyLaps','MyLaps'),
+        ('Easylap','Easylap'),
+        ('Trackmate','Trackmate'),]
     transponder = models.CharField(max_length=10, choices=TRANSPONDER_CHOICES, blank=True, null=True)
     device = models.ForeignKey(
         Device,
