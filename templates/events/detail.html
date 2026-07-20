@@ -1,10 +1,18 @@
 <!-- events/detail.html -->
+{% load dict_extras %}
 {% if event.event_races.exists %}
     <div class="panel">
         <h4>Races</h4>
         <ul>
             {% for race in object.event_races.all %}
-                <li><a href="{% url 'races:detail' race.race.uuid %}">{{ race.race }}</a></li>
+                <li>
+                    <a href="{% url 'races:detail' race.race.uuid %}">{{ race.race }}</a>
+                    {% with my_count=user_race_entry_counts|dict_get:race.race.id %}
+                        {% if my_count %}
+                            — <small>your entries: {{ my_count }}</small>
+                        {% endif %}
+                    {% endwith %}
+                </li>
             {% endfor %}
         </ul>
     </div>

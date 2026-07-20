@@ -2,12 +2,13 @@ import uuid as uuid_lib
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
 from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from devices.models import Device, DevicePayload
+from races.models import RaceDriver
 from .forms import EventCheckinForm
 from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace, EventCheckin
 from django.shortcuts import get_object_or_404, redirect
@@ -65,6 +66,31 @@ class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     # owner-scoped default, and the "Owner functions" block in
     # crud/detail.html stays gated by is_owner, so this doesn't loosen
     # anything but read access to the detail page itself.
+
+    def get_context_data(self, **kwargs):
+        # user_race_entry_counts: race.id -> count of RaceDriver rows the
+        # viewing user has in that race, so events/detail.html can show
+        # "you have N entries" next to each race listed for this event.
+        # Anonymous visitors (allowed in via is_public, see above) can't
+        # have entries, so they just get an empty dict / all zeros.
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        if user.is_authenticated:
+            race_ids = list(
+                self.object.event_races.values_list("race_id", flat=True)
+            )
+            counts = (
+                RaceDriver.objects
+                .filter(race_id__in=race_ids, user=user)
+                .values("race_id")
+                .annotate(count=Count("id"))
+            )
+            context["user_race_entry_counts"] = {
+                row["race_id"]: row["count"] for row in counts
+            }
+        else:
+            context["user_race_entry_counts"] = {}
+        return context
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Event
