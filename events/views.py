@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, View
 from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from devices.models import Device, DevicePayload
-from races.models import RaceDriver
+from races.models import Race, RaceDriver
 from .forms import EventCheckinForm
 from .models import Event, EventLocation, EventTeam, EventClub, EventStore, EventRace, EventCheckin
 from django.shortcuts import get_object_or_404, redirect
@@ -199,6 +199,19 @@ class EventRaceAdd(CrudAuthMixin, CrudContextMixin, CreateView):
     template_name = "crud/form.html"
     action = "Add"
     model_name = "Event Race"
+
+    def get_form(self, form_class=None):
+        # Dropdown previously listed every Race in the system regardless of
+        # owner or existing event assignment. Restrict it to races owned by
+        # this user that aren't already tied to some other event -- also
+        # exclude races already added to this event so re-submitting the
+        # form can't trip the unique_event_race constraint.
+        form = super().get_form(form_class)
+        form.fields["race"].queryset = Race.objects.filter(
+            owner=self.request.user,
+            event_races__isnull=True,
+        ).distinct()
+        return form
 
     def form_valid(self, form):
         # owner=self.request.user: these Add/Remove endpoints previously had
