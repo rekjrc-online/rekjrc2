@@ -36,7 +36,22 @@ def _event_staff_queryset(user):
 
 class List_(CrudAuthMixin, CrudContextMixin, ListView):
     model = Event
-    template_name = "crud/list.html"
+    template_name = "events/list.html"
+
+    def get_context_data(self, **kwargs):
+        # object_list (from CrudContextMixin/ListView's default get_queryset)
+        # is already owner-scoped -- events this user created. This adds a
+        # second section, same pattern as teams.List_'s member_teams: events
+        # the user hasn't necessarily created but has a checked-in lanyard/
+        # card for (events.EventCheckin, keyed on event+rfid_code, set via
+        # the event's Checkin_ staff flow). Excludes events already shown
+        # above so an owner who also checked themselves in doesn't see it
+        # twice.
+        context = super().get_context_data(**kwargs)
+        context['checked_in_events'] = Event.objects.filter(
+            checkins__user=self.request.user
+        ).exclude(owner=self.request.user).distinct()
+        return context
 
 class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     model = Event
