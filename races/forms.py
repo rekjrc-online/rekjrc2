@@ -1,13 +1,20 @@
 from django import forms
-from django.db.models import Q
 from .models import Race, RaceDriver, RaceJudgeDevice
 
 
 def _user_devices(user):
-    from devices.models import Device
-    return Device.objects.filter(
-        Q(owner_user=user) | Q(owner_team__members__user=user)
-    ).distinct()
+    # Reuses devices.views._user_devices (the canonical "devices this user
+    # can pick from" query: claimed_by, or GFK-owned by the user/a team/club/
+    # location they belong to) instead of keeping a second copy here. This
+    # local copy used to filter on Device.owner_user / Device.owner_team --
+    # separate FK fields that were dropped from the Device model back in
+    # migrations 0004/0005 when ownership moved to a single GenericForeignKey
+    # (content_type/object_id). Nothing updated this copy when that happened,
+    # so it kept raising FieldError ("Cannot resolve keyword 'owner_user'")
+    # every time RaceForm/RaceJudgeDeviceForm tried to scope the device
+    # dropdown for a user.
+    from devices.views import _user_devices as _devices_user_devices
+    return _devices_user_devices(user)
 
 
 class RaceForm(forms.ModelForm):
