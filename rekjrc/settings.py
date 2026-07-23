@@ -40,6 +40,15 @@ STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', default='')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', default='')
 
 # ------------------------------
+# Cloudflare Turnstile (registration captcha)
+# ------------------------------
+# Defaults are Cloudflare's published "always passes" test keys, so
+# registration keeps working out of the box in dev. Swap in real keys
+# from the Cloudflare dashboard (Turnstile) for production in .env.
+TURNSTILE_SITE_KEY = env('TURNSTILE_SITE_KEY', default='1x00000000000000000000AA')
+TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='1x0000000000000000000000000000000AA')
+
+# ------------------------------
 # Celery Setup
 # ------------------------------
 CELERY_BROKER_URL = 'redis://localhost:6379/0'

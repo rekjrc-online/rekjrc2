@@ -6,8 +6,10 @@
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
+        <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
         <button type="submit">Sign Up</button>
     </form>
 </div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endblock %}
 
