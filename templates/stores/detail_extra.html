@@ -1,0 +1,22 @@
+<!-- templates/stores/detail_extra.html -->
+<!-- Included from crud/detail.html only when model_name == "store". -->
+
+<div class="panel">
+  <h4>Online Store</h4>
+
+  {% if object.storefront_live %}
+    <p>Your storefront is live: <a href="{{ object.get_storefront_url }}">{{ object.get_storefront_url }}</a></p>
+  {% elif object.is_storefront_enabled %}
+    <p>Storefront is enabled, but this store doesn't have Stripe keys configured yet -- customers can't check out until that's done.</p>
+  {% else %}
+    <p>This store isn't selling online yet. Turn on "Storefront Enabled" (Edit) once Stripe is set up.</p>
+  {% endif %}
+
+  {% if is_owner %}
+    <p>
+      Stripe: {% if object.can_accept_payments %}configured{% else %}not configured yet{% endif %}<br />
+      This store's Stripe account is set up by hand -- contact Jason to get connected. Its keys live
+      in the server's <code>.env</code> file, not in this app.
+    </p>
+  {% endif %}
+</div>

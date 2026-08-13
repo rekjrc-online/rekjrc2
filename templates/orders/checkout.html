@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/orders/checkout.html -->
+
+<div class="panel">
+  <h1>{{ store.display_name }} - Checkout</h1>
+
+  <table cellpadding="4" cellspacing="0">
+    {% for item in cart.items.all %}
+      <tr>
+        <td>{{ item.quantity }} x {{ item.variant.product.name }} - {{ item.variant.name }}</td>
+        <td>${{ item.line_total }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  <p><strong>Subtotal: ${{ cart.subtotal }}</strong></p>
+  <p class="muted">Shipping will be confirmed by RekjRC before your order ships.</p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <label for="email">Email</label>
+    <input type="email" name="email" id="email" value="{{ request.user.email|default:'' }}" required /><br /><br />
+
+    <label for="shipping_name">Name</label>
+    <input type="text" name="shipping_name" id="shipping_name" /><br /><br />
+
+    <label for="shipping_address_line1">Address</label>
+    <input type="text" name="shipping_address_line1" id="shipping_address_line1" /><br />
+    <input type="text" name="shipping_address_line2" placeholder="Apt / suite (optional)" /><br /><br />
+
+    <label for="shipping_city">City</label>
+    <input type="text" name="shipping_city" id="shipping_city" />
+    <label for="shipping_state">State</label>
+    <input type="text" name="shipping_state" id="shipping_state" style="width:60px;" />
+    <label for="shipping_postal_code">ZIP</label>
+    <input type="text" name="shipping_postal_code" id="shipping_postal_code" style="width:100px;" /><br /><br />
+
+    <label for="shipping_country">Country</label>
+    <input type="text" name="shipping_country" id="shipping_country" value="US" /><br /><br />
+
+    <button type="submit" class="btn btn-primary">Continue to Payment</button>
+  </form>
+</div>
+
+{% endblock %}

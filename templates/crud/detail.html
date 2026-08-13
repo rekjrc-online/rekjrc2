@@ -65,6 +65,10 @@
   {% include "events/detail.html" %}
 {% endif %}
 
+{% if model_name == "store" %}
+  {% include "stores/detail_extra.html" %}
+{% endif %}
+
 {% if object_posts is not None %}
   {% include "posts/object_posts.html" %}
 {% endif %}

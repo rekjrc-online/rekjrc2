@@ -85,6 +85,11 @@ INSTALLED_APPS = [
     "teams",
     "tracks",
 
+    # Store apps
+    "products",
+    "cart",
+    "orders",
+
     # Event apps
     "crawler",
     "dragrace",

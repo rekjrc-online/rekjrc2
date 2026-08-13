@@ -1,13 +1,11 @@
 from django.urls import path
-from django.views.generic import TemplateView
-from .views import CheckoutView, StripeWebhookView, PaymentSuccessView, PaymentCancelView
 
-app_name = 'stripe'
+from .views import stripe_webhook
+
+app_name = 'stripe_app'
 
 urlpatterns = [
-    path("checkout/<slug:product_slug>/", CheckoutView.as_view(), name="checkout"),
-    path("webhook/", StripeWebhookView.as_view(), name="webhook"),
-    path("success/", PaymentSuccessView.as_view(), name="success"),
-    path("cancel/", PaymentCancelView.as_view(), name="cancel"),
-    path("products/", TemplateView.as_view(template_name="stripe_app/products.html"), name="products"),
+    # Each store's own Stripe dashboard needs a webhook pointed at its own
+    # /stripe/webhook/<store.pk>/ -- see stripe_app.views.stripe_webhook.
+    path("webhook/<int:store_pk>/", stripe_webhook, name="webhook"),
 ]

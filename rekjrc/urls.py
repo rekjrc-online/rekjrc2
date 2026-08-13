@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.urls import path, include
 from django.views.generic import TemplateView
 from posts import views
+from stores import views as stores_views
 
 def custom_404(request, exception):
     return render(request, "pages/404.html", status=404)
@@ -24,8 +25,17 @@ urlpatterns = [
 
     path('u/', include(('urls_app.urls', 'urls_app'), namespace='urls_app')),
     # path('sponsors/', include(('sponsors.urls', 'sponsors'), namespace='sponsors')),
-    # path('stripe/', include(('stripe_app.urls', 'stripe_app'), namespace='stripe')),
     # path('support/', include(('support.urls', 'support'), namespace='support')),
+
+    # Public storefront directory (all stores with an enabled, live
+    # storefront). Must come before the products.urls include below --
+    # path('shop/', ...) only matches the bare /shop/ URL, so
+    # /shop/<store_slug>/ still falls through to products.urls.
+    path('shop/', stores_views.storefront_directory, name='storefront_directory'),
+    path('shop/', include(('products.urls', 'products'), namespace='products')),
+    path('cart/', include(('cart.urls', 'cart'), namespace='cart')),
+    path('orders/', include(('orders.urls', 'orders'), namespace='orders')),
+    path('stripe/', include(('stripe_app.urls', 'stripe_app'), namespace='stripe_app')),
 
     path('devices/', include(('devices.urls', 'devices'), namespace='devices')),
     path('builds/', include(('builds.urls', 'builds'), namespace='builds')),

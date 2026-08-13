@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/list.html -->
+
+<div class="panel" style="text-align: center">
+  <h3>{{ store.display_name }}</h3>
+  <a href="{% url 'cart:detail' store.slug %}">Cart</a>
+  {% if not products %}
+    <br />- No products listed yet -<br />
+  {% endif %}
+</div>
+
+{% for product in products %}
+  <div class="post">
+    <table cellpadding="5" cellspacing="0">
+      <tr>
+        <td valign="top">
+          <a href="{{ product.get_absolute_url }}">
+            {% if product.thumbnail %}
+              <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="product-thumbnail" />
+            {% elif product.primary_image %}
+              <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}" class="product-thumbnail" />
+            {% endif %}
+          </a>
+        </td>
+        <td valign="top">
+          <a href="{{ product.get_absolute_url }}"><strong>{{ product.name }}</strong></a>
+          {% if not product.in_stock %}
+            <span class="muted"> (sold out)</span>
+          {% endif %}
+          {% if product.description %}
+            <p>{{ product.description|truncatewords:25|linebreaksbr }}</p>
+          {% endif %}
+
+          {% if product.in_stock %}
+            <form method="post" action="{% url 'cart:add' store.slug %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}" />
+              {% for variant in product.active_variants %}
+                <label>
+                  <input type="radio" name="variant_uuid" value="{{ variant.uuid }}"
+                         {% if forloop.first %}checked{% endif %} required />
+                  {{ variant.name }} - ${{ variant.price }}
+                </label><br />
+              {% endfor %}
+              <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+{% endfor %}
+
+{% endblock %}

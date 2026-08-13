@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/orders/confirmation.html -->
+
+<div class="panel">
+  {% if order.status == "paid" or order.status == "fulfilled" %}
+    <h1>Thanks for your order!</h1>
+    <p>A confirmation has been sent to {{ order.email }}.</p>
+  {% else %}
+    <h1>Order received</h1>
+    <p>We're waiting to hear back from Stripe that this order was paid. Refresh this page in a moment
+      if it doesn't update automatically.</p>
+  {% endif %}
+
+  <p>Store: {{ store.display_name }}<br />Order: {{ order.uuid }}<br />Status: {{ order.get_status_display }}</p>
+
+  <table cellpadding="4" cellspacing="0">
+    {% for item in order.items.all %}
+      <tr>
+        <td>{{ item.quantity }} x {{ item.product_name }}{% if item.variant_name %} - {{ item.variant_name }}{% endif %}</td>
+        <td>${{ item.line_total }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  <p>Subtotal: ${{ order.subtotal }}<br />
+     Shipping: ${{ order.shipping_cost }}<br />
+     <strong>Total: ${{ order.total }}</strong></p>
+</div>
+
+{% endblock %}

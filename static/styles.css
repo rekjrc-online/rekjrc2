@@ -126,6 +126,17 @@ a:hover {
     vertical-align: middle;
 }
 
+/* Product thumbnails -- rectangular photos of physical parts/kits look
+   wrong cropped into the circular menu-avatar-large style above, so
+   products get their own square-but-not-circular box. */
+.product-thumbnail {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
 /* Post avatars */
 .post .avatar {
     width: 35px;
@@ -263,6 +274,64 @@ nav {
 
 .post:hover {
     background-color: var(--bg-post-hover);
+}
+
+/* Cart line items -- stacked (not tabular) so they still read cleanly in
+   the narrow middle column (grid-template-columns caps it at 500px).
+   Not clickable like a normal .post, so undo the pointer/hover styling. */
+.cart-line-item {
+    cursor: default;
+    margin-bottom: 10px;
+}
+
+.cart-line-item:hover {
+    background-color: transparent;
+}
+
+.cart-line-item-name {
+    margin-bottom: 8px;
+}
+
+/* The Update-qty and Remove forms are compact inline action buttons, not
+   full-page data-entry forms. The sitewide `form { display:flex;
+   flex-direction:column }` and `form button[type="submit"] { width:100% }`
+   rules above (correct for things like the login/checkout forms) are more
+   specific than Bootstrap's .btn classes, so they were silently winning
+   and turning Update/Remove into two identical full-width pills. These
+   rules use a class selector specifically to outrank them. */
+.cart-line-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.cart-line-item-actions form {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: auto;
+}
+
+.cart-line-item-actions form label {
+    display: inline;
+    font-weight: normal;
+    margin: 0;
+}
+
+.cart-line-item-actions button[type="submit"] {
+    width: auto;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+}
+
+.cart-line-item-actions .remove-form button[type="submit"] {
+    background: #c0392b;
+}
+
+.cart-line-item-actions .remove-form button[type="submit"]:hover {
+    background: #922b21;
 }
 
 .reply {
