@@ -25,7 +25,12 @@ def _annotate_liked(queryset, user):
 
 
 def homepage(request):
-    page = int(request.GET.get("page", 1))
+    try:
+        page = int(request.GET.get("page", 1))
+    except (TypeError, ValueError):
+        page = 1
+    if page < 1:
+        page = 1
     posts_per_page = 5
     start = (page - 1) * posts_per_page
     end = start + posts_per_page
@@ -185,7 +190,12 @@ class ObjectPostsAjax(View):
             request.user,
         )
 
-        page_num = int(request.GET.get("page", 1))
+        try:
+            page_num = int(request.GET.get("page", 1))
+        except (TypeError, ValueError):
+            page_num = 1
+        if page_num < 1:
+            page_num = 1
         paginator = Paginator(qs, self.POSTS_PER_PAGE)
         page = paginator.get_page(page_num)
 
