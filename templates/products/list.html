@@ -41,7 +41,7 @@
                   <input type="radio" name="variant_uuid" value="{{ variant.uuid }}"
                          {% if forloop.first %}checked{% endif %} required />
                   {{ variant.name }} - ${{ variant.price }}
-                </label><br />
+                </label>
               {% endfor %}
               <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
             </form>
