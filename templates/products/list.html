@@ -17,9 +17,9 @@
         <td valign="top">
           <a href="{{ product.get_absolute_url }}">
             {% if product.thumbnail %}
-              <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="product-thumbnail" />
+              <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" />
             {% elif product.primary_image %}
-              <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}" class="product-thumbnail" />
+              <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}" />
             {% endif %}
           </a>
         </td>
@@ -36,6 +36,7 @@
             <form method="post" action="{% url 'cart:add' store.slug %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.path }}" />
+              <br />
               {% for variant in product.active_variants %}
                 <label>
                   <input type="radio" name="variant_uuid" value="{{ variant.uuid }}"
