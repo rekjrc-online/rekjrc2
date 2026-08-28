@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/manage_variant_list.html -->
+
+<div class="panel" style="text-align: center">
+  <h3>Variants - {{ product.name }}</h3>
+  <a href="{% url 'products:manage_variant_create' store.slug product.slug %}" class="button">Add Variant</a>
+  {% if not variants %}
+    <br />- No variants yet -- this product can't be sold until it has at least one active variant.<br />
+  {% endif %}
+</div>
+
+{% for variant in variants %}
+  <div class="post">
+    <table cellpadding="5" cellspacing="0" width="100%">
+      <tr>
+        <td valign="top" width="100%">
+          <strong>{{ variant.name }}</strong>
+          {% if not variant.is_active %}<span class="muted"> (inactive)</span>{% endif %}
+          <p>SKU: {{ variant.sku }} &mdash; ${{ variant.price }}</p>
+        </td>
+        <td valign="top" align="right">
+          <a href="{% url 'products:manage_variant_edit' store.slug product.slug variant.uuid %}" class="button">Edit</a>
+          <a href="{% url 'products:manage_variant_delete' store.slug product.slug variant.uuid %}" class="button button-danger">Delete</a>
+        </td>
+      </tr>
+    </table>
+  </div>
+{% endfor %}
+
+<div class="panel" style="text-align: center">
+  <a href="{% url 'products:manage_edit' store.slug product.slug %}">&larr; Back to {{ product.name }}</a>
+</div>
+
+{% endblock %}

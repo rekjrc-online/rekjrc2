@@ -1,5 +1,5 @@
 from celery import shared_task
-from PIL import Image
+from PIL import Image, ImageOps
 
 @shared_task
 def resize_avatar(app_label, model_name, pk):
@@ -9,6 +9,13 @@ def resize_avatar(app_label, model_name, pk):
     if instance.avatar and hasattr(instance.avatar, 'path'):
         try:
             img = Image.open(instance.avatar.path)
+            # Phone photos are usually stored "sideways" with an EXIF
+            # Orientation tag telling viewers to rotate on display --
+            # browsers respect that tag, but a plain .thumbnail()/.save()
+            # here would bake in the raw (rotated-looking) pixels and drop
+            # the tag. exif_transpose() physically rotates the pixels to
+            # match, then strips the now-redundant tag.
+            img = ImageOps.exif_transpose(img)
             img.thumbnail((300, 300))
             img.save(instance.avatar.path, optimize=True, quality=85)
         except Exception as e:
@@ -49,6 +56,12 @@ def resize_product_thumbnail(product_id):
 
     try:
         img = Image.open(primary.image.path)
+        # See the matching comment in resize_avatar above -- without this,
+        # phone photos with an EXIF Orientation tag come out rotated in the
+        # derived thumbnail even though the original upload displays
+        # right-side-up (browsers apply that tag; this re-encoded copy
+        # otherwise wouldn't).
+        img = ImageOps.exif_transpose(img)
         if img.mode != 'RGB':
             img = img.convert('RGB')
         img.thumbnail((500, 500))

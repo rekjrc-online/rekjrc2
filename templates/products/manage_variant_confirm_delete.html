@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/manage_variant_confirm_delete.html -->
+
+<div class="panel" style="text-align:center;">
+  <h3>Delete variant "{{ object.name }}"</h3>
+  {% if product.variants.count == 1 %}
+    <p class="muted">
+      This is the only variant on {{ product.name }} -- deleting it will make the product
+      un-purchasable until you add another.
+    </p>
+  {% endif %}
+</div>
+
+<div class="panel" style="text-align:center;">
+  <form method="post">
+    {% csrf_token %}
+    <p>Are you sure? This can't be undone.</p>
+    <button type="submit">Yes, delete</button>
+  </form>
+</div>
+
+<div class="panel" style="text-align: center">
+  <a href="{% url 'products:manage_variants' store.slug product.slug %}">&larr; Back to variants</a>
+</div>
+
+{% endblock %}

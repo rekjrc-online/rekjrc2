@@ -14,6 +14,16 @@
   <div class="post">
     <table cellpadding="5" cellspacing="0">
       <tr>
+        <td colspan="2">
+          <h4>
+            <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+            {% if not product.in_stock %}
+              <span class="muted"> (sold out)</span>
+            {% endif %}
+          </h4>
+        </td>
+      </tr>
+      <tr>
         <td valign="top">
           <a href="{{ product.get_absolute_url }}">
             {% if product.thumbnail %}
@@ -24,26 +34,34 @@
           </a>
         </td>
         <td valign="top">
-          <a href="{{ product.get_absolute_url }}"><strong>{{ product.name }}</strong></a>
           {% if not product.in_stock %}
             <span class="muted"> (sold out)</span>
           {% endif %}
           {% if product.description %}
             <p>{{ product.description|truncatewords:25|linebreaksbr }}</p>
           {% endif %}
-
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
           {% if product.in_stock %}
             <form method="post" action="{% url 'cart:add' store.slug %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.path }}" />
-              <br />
               {% for variant in product.active_variants %}
                 <label>
                   <input type="radio" name="variant_uuid" value="{{ variant.uuid }}"
                          {% if forloop.first %}checked{% endif %} required />
-                  {{ variant.name }} - ${{ variant.price }}
+                  ${{ variant.price }} - {{ variant.name }}
                 </label>
               {% endfor %}
+              <table>
+                <tr>
+                  <td>Qty:&nbsp;</td>
+                  <td><input type="number" name="quantity" id="quantity" value="1" min="1" style="width:60px;" /></td>
+                  <td width="100%">&nbsp;</td>
+                </tr>
+              </table>
               <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
             </form>
           {% endif %}

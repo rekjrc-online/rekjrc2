@@ -46,6 +46,9 @@
           <hr />
           Owner functions:
           <a href="edit" class="button">Edit</a>,
+          {% if model_name == "store" %}
+            <a href="{% url 'products:manage_list' store_slug=object.slug %}" class="button">Products</a>,
+          {% endif %}
           {% if object.has_advanced %}
             <a href="delete" class="button button-danger">Delete</a>,
             <a href="advanced" class="button">Advanced</a>

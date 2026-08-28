@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (xhr.readyState !== 4) return;
 
             loading = false;
-            loadingIndicator.style.display = 'none';
 
             if (xhr.status !== 200) return;
 
@@ -33,10 +32,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!data.html || !data.html.trim()) {
                 hasMore = false;
-                endMessage.style.display = 'block';
             } else {
                 feed.insertAdjacentHTML('beforeend', data.html);
                 page++;
+                if (data.end) {
+                    hasMore = false;
+                }
+            }
+
+            // Only hide the sentinel once there truly is no more to load --
+            // an IntersectionObserver stops firing for a target once it has
+            // display:none (no box to re-intersect), so hiding it after every
+            // fetch (as this used to do unconditionally) silently killed
+            // pagination after the very first extra page loaded.
+            if (!hasMore) {
+                loadingIndicator.style.display = 'none';
+                endMessage.style.display = 'block';
             }
         };
 

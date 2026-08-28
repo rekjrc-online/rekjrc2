@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/manage_image_list.html -->
+
+<div class="panel" style="text-align: center">
+  <h3>Images - {{ product.name }}</h3>
+  <a href="{% url 'products:manage_image_create' store.slug product.slug %}" class="button">Add Image</a>
+  {% if not images %}
+    <br />- No images yet -<br />
+  {% endif %}
+</div>
+
+{% for image in images %}
+  <div class="post">
+    <table cellpadding="5" cellspacing="0" width="100%">
+      <tr>
+        <td valign="top">
+          <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:product.name }}" style="max-width:150px;" />
+        </td>
+        <td valign="top" width="100%">
+          {% if image.alt_text %}<p>{{ image.alt_text }}</p>{% endif %}
+          <p class="muted">
+            Sort order: {{ image.sort_order }}
+            {% if forloop.first %}(this one is used for the product thumbnail){% endif %}
+          </p>
+        </td>
+        <td valign="top" align="right">
+          <a href="{% url 'products:manage_image_edit' store.slug product.slug image.uuid %}" class="button">Edit</a>
+          <a href="{% url 'products:manage_image_delete' store.slug product.slug image.uuid %}" class="button button-danger">Delete</a>
+        </td>
+      </tr>
+    </table>
+  </div>
+{% endfor %}
+
+<div class="panel" style="text-align: center">
+  <a href="{% url 'products:manage_edit' store.slug product.slug %}">&larr; Back to {{ product.name }}</a>
+</div>
+
+{% endblock %}

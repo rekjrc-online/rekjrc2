@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/manage_form.html -->
+
+<div class="panel" style="text-align:center;">
+  <h3>{{ action }} Product - {{ store.display_name }}</h3>
+</div>
+
+<div class="panel"><br />
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table align="center" cellpadding="5">
+      {% for field in form %}
+      <tr>
+        <td valign="top">{{ field.label_tag }}</td>
+        <td>
+          {{ field }}
+          {% if field.help_text %}<br /><span class="muted">{{ field.help_text }}</span>{% endif %}
+          {% if field.errors %}<br /><span class="error">{{ field.errors }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="2"><button type="submit">Save</button></td>
+      </tr>
+    </table>
+  </form>
+</div>
+
+{% if object %}
+<div class="panel" style="text-align: center">
+  <a href="{% url 'products:manage_variants' store.slug object.slug %}" class="button">Manage Variants</a>
+  <a href="{% url 'products:manage_images' store.slug object.slug %}" class="button">Manage Images</a>
+</div>
+{% endif %}
+
+<div class="panel" style="text-align: center">
+  <a href="{% url 'products:manage_list' store.slug %}">&larr; Back to products</a>
+</div>
+
+{% endblock %}

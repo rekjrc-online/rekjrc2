@@ -12,7 +12,6 @@ from rekjrc.base_models import Ownable
 from .forms import PostForm
 from .models import Post, PostLike
 
-
 def _annotate_liked(queryset, user):
     """Annotate a Post queryset with liked_by_user for the given user."""
     if user and user.is_authenticated:
@@ -22,7 +21,6 @@ def _annotate_liked(queryset, user):
             )
         )
     return queryset
-
 
 def homepage(request):
     try:
@@ -51,10 +49,15 @@ class PostDetail(DetailView):
     slug_url_kwarg = "post_uuid"
 
     def get_context_data(self, **kwargs):
+        from django.core.paginator import Paginator
+
         ctx = super().get_context_data(**kwargs)
         post = self.object
-        replies = post.replies.order_by('created_at')
-        ctx['replies'] = replies
+        replies_qs = _annotate_liked(
+            post.replies.order_by('created_at'), self.request.user
+        )
+        paginator = Paginator(replies_qs, PostRepliesAjax.REPLIES_PER_PAGE)
+        ctx['replies'] = paginator.get_page(1)
         ctx['parent_post'] = post.parent if hasattr(post, 'parent') else None
         return ctx
 
@@ -123,21 +126,33 @@ class PostReplyView(LoginRequiredMixin, CreateView):
         return ctx
 
 class PostRepliesAjax(View):
+    """
+    Paginated replies endpoint for a post's detail page.
+    URL: /posts/replies/ajax/<post_uuid>/?page=N
+    Returns JSON {html, has_next} using the posts/list.html fragment --
+    same contract as ObjectPostsAjax, since both feed scroll_replies.js.
+    """
+    REPLIES_PER_PAGE = 5
+
     def get(self, request, post_uuid, *args, **kwargs):
+        from django.core.paginator import Paginator
+
         post = get_object_or_404(Post, uuid=post_uuid)
-        replies = post.replies.all()
-        data = {
-            "post_uuid": str(post.uuid),
-            "replies": [
-                {
-                    "uuid": str(reply.uuid),
-                    "content": reply.content,
-                    "author": reply.author.username,
-                }
-                for reply in replies
-            ]
-        }
-        return JsonResponse(data)
+        replies = _annotate_liked(
+            post.replies.order_by("created_at"), request.user
+        )
+
+        try:
+            page_num = int(request.GET.get("page", 1))
+        except (TypeError, ValueError):
+            page_num = 1
+        if page_num < 1:
+            page_num = 1
+        paginator = Paginator(replies, self.REPLIES_PER_PAGE)
+        page = paginator.get_page(page_num)
+
+        html = render_to_string("posts/list.html", {"posts": page.object_list}, request=request)
+        return JsonResponse({"html": html, "has_next": page.has_next()})
 
 @login_required
 def toggle_like_ajax(request, post_uuid):

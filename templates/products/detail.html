@@ -20,18 +20,18 @@
   {% if not product.in_stock %}
     <p><strong>Sold out</strong></p>
   {% else %}
+    <hr />
     <form method="post" action="{% url 'cart:add' store.slug %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.path }}" />
 
       {% if product.active_variants.count > 1 %}
-        <p>Option:</p>
         {% for variant in product.active_variants %}
           <label>
             <input type="radio" name="variant_uuid" value="{{ variant.uuid }}"
                    {% if forloop.first %}checked{% endif %} required />
-            {{ variant.name }} - ${{ variant.price }}
-          </label><br />
+            ${{ variant.price }} - {{ variant.name }}
+          </label>
         {% endfor %}
       {% else %}
         {% with variant=product.active_variants.first %}
@@ -40,9 +40,13 @@
         {% endwith %}
       {% endif %}
 
-      <label for="quantity">Qty:</label>
-      <input type="number" name="quantity" id="quantity" value="1" min="1" style="width:60px;" />
-
+      <table>
+        <tr>
+          <td>Qty:&nbsp;</td>
+          <td><input type="number" name="quantity" id="quantity" value="1" min="1" style="width:60px;" /></td>
+          <td width="100%">&nbsp;</td>
+        </tr>
+      </table>
       <button type="submit" class="btn btn-primary">Add to Cart</button>
     </form>
   {% endif %}

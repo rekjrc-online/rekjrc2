@@ -49,6 +49,7 @@ class Product(BaseModel):
         return f"{self.name} ({self.store.display_name})"
 
     def save(self, *args, **kwargs):
+        is_new = self._state.adding
         if not self.slug:
             base_slug = slugify(self.name)[:240]
             slug = base_slug
@@ -58,6 +59,14 @@ class Product(BaseModel):
                 i += 1
             self.slug = slug
         super().save(*args, **kwargs)
+        if is_new and not self.variants.exists():
+            # A product needs at least one active variant to be purchasable
+            # (see in_stock below) -- give it one automatically so a product
+            # created without ever touching the admin's variant inline is
+            # still sellable. SKU is derived from the pk (guaranteed unique)
+            # rather than the slug, since ProductVariant.sku is unique
+            # across all stores/products, not just within this one.
+            self.variants.create(name="Default", sku=f"product-{self.pk}")
 
     def get_absolute_url(self):
         return reverse("products:detail", kwargs={"store_slug": self.store.slug, "slug": self.slug})

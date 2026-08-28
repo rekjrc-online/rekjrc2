@@ -3,31 +3,39 @@
 <!-- templates/cart/cart.html -->
 
 <div class="panel">
-  <h1>{{ store.display_name }}<br />Your Cart</h1>
+  <h1>Your Cart</h1>
+  <h2>{{ store.display_name }}</h2>
+</div>
 
+<div class="panel">
   {% if not cart.items.all %}
     <p>Your cart is empty. <a href="{% url 'products:list' store.slug %}">Browse {{ store.display_name }}</a>.</p>
   {% else %}
     {% for item in cart.items.all %}
-      <div class="post cart-line-item">
+      <div>
         <p class="cart-line-item-name"><strong>{{ item.variant.product.name }}</strong> - {{ item.variant.name }}</p>
-        <p>Price: ${{ item.variant.price }}</p>
-        <p>Line total: ${{ item.line_total }}</p>
+        <p>Price: ${{ item.variant.price }} - Qty: {{ item.quantity }} - Line total: ${{ item.line_total }}</p>
 
-        <div class="cart-line-item-actions">
+        <div>
           <form method="post" action="{% url 'cart:update' store.slug item.uuid %}">
             {% csrf_token %}
-            <label>Qty:
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="0" style="width:60px;" />
-            </label>
-            <button type="submit">Update</button>
+            <table>
+              <tr>
+                <td>Qty:&nbsp;</td>
+                <td><input type="number" name="quantity" value="{{ item.quantity }}" min="0" style="width:60px;" /></td>
+                <td><button type="submit">Update</button></td>
+                <td width="100%">&nbsp;</td>
+              </tr>
+            </table>
           </form>
+          <br />
           <form method="post" action="{% url 'cart:remove' store.slug item.uuid %}" class="remove-form">
             {% csrf_token %}
             <button type="submit">Remove</button>
           </form>
         </div>
       </div>
+      <hr />
     {% endfor %}
 
     <p><strong>Subtotal: ${{ cart.subtotal }}</strong></p>

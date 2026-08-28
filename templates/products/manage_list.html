@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/products/manage_list.html -->
+
+<div class="panel" style="text-align: center">
+  <h3>Manage Products - {{ store.display_name }}</h3>
+  <a href="{% url 'products:manage_create' store.slug %}" class="button">Add Product</a>
+  {% if not products %}
+    <br />- No products yet -<br />
+  {% endif %}
+</div>
+
+{% for product in products %}
+  <div class="panel">
+    <table cellpadding="5" cellspacing="0" width="100%">
+      <tr>
+        <td valign="top">
+          {% if product.thumbnail %}
+            <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="menu-avatar-large" />
+          {% endif %}
+        </td>
+        <td valign="top" width="100%">
+          <strong>{{ product.name }}</strong>
+          {% if not product.is_active %}<span class="muted"> (inactive)</span>{% endif %}
+          {% if not product.in_stock %}
+            <span class="muted">
+              (no active variants --
+              <a href="{% url 'products:manage_variant_create' store.slug product.slug %}">add one</a>)
+            </span>
+          {% endif %}
+        </td>
+        <td valign="top" align="right">
+          <a href="{% url 'products:manage_edit' store.slug product.slug %}" class="button">Edit</a>
+          <a href="{% url 'products:manage_variants' store.slug product.slug %}" class="button">Variants</a>
+          <a href="{% url 'products:manage_images' store.slug product.slug %}" class="button">Images</a>
+          <a href="{% url 'products:manage_delete' store.slug product.slug %}" class="button button-danger">Delete</a>
+        </td>
+      </tr>
+      {% if product.variants.all %}
+        <tr>
+          <td></td>
+          <td colspan="2">
+            <table cellpadding="3" cellspacing="0" width="100%">
+              <tr>
+                <th align="left">Variant</th>
+                <th align="left">Price</th>
+              </tr>
+              {% for variant in product.variants.all %}
+                <tr>
+                  <td>
+                    <a href="{% url 'products:manage_variant_edit' store.slug product.slug variant.uuid %}"
+                       title="{{ variant.name }} ({{ variant.sku }})"
+                       {% if not variant.is_active %}style="text-decoration: line-through;"{% endif %}>
+                      {{ variant.name }}
+                    </a>
+                  </td>
+                  <td>${{ variant.price }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+      {% endif %}
+    </table>
+  </div>
+{% endfor %}
+
+<div class="panel" style="text-align: center">
+  <a href="{{ store.get_absolute_url }}">&larr; Back to {{ store.display_name }}</a>
+</div>
+
+{% endblock %}
