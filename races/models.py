@@ -20,9 +20,9 @@ class Race(BaseModel, Ownable):
         ('Stopwatch Race',  'Stopwatch Race'),
         ('Long Jump',       'Long Jump'),
         ('Top Speed',       'Top Speed'),
+        ('Rally',           'Rally'),
         ('Judged Event',    'Judged Event'),
         ('Drag Race',       'Drag Single Elimination'),
-        ('Drag Double',     'Drag Double Elimination'),
         ('Round Robin',     'Drag Round Robin'),
         ('Swiss System',    'Drag Swiss System'), ]
     race_type = models.CharField(
