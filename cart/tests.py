@@ -91,6 +91,37 @@ class CartTests(TestCase):
         open_cart = Cart.objects.create(store=self.store, session_key="abc123")
         self.assertNotIn("[checked out]", str(open_cart))
 
+    def test_update_cart_item_changes_quantity(self):
+        self.client.post(
+            f"/cart/{self.store.slug}/add/",
+            {"variant_uuid": str(self.variant.uuid), "quantity": 1},
+        )
+        cart = Cart.objects.get(store=self.store, checked_out=False)
+        item = cart.items.get(variant=self.variant)
+        self.client.post(f"/cart/{self.store.slug}/{item.uuid}/update/", {"quantity": 5})
+        item.refresh_from_db()
+        self.assertEqual(item.quantity, 5)
+
+    def test_update_cart_item_deletes_when_quantity_zero_or_less(self):
+        self.client.post(
+            f"/cart/{self.store.slug}/add/",
+            {"variant_uuid": str(self.variant.uuid), "quantity": 2},
+        )
+        cart = Cart.objects.get(store=self.store, checked_out=False)
+        item = cart.items.get(variant=self.variant)
+        self.client.post(f"/cart/{self.store.slug}/{item.uuid}/update/", {"quantity": 0})
+        self.assertFalse(CartItem.objects.filter(pk=item.pk).exists())
+
+    def test_remove_cart_item_deletes_item(self):
+        self.client.post(
+            f"/cart/{self.store.slug}/add/",
+            {"variant_uuid": str(self.variant.uuid), "quantity": 2},
+        )
+        cart = Cart.objects.get(store=self.store, checked_out=False)
+        item = cart.items.get(variant=self.variant)
+        self.client.post(f"/cart/{self.store.slug}/{item.uuid}/remove/")
+        self.assertFalse(CartItem.objects.filter(pk=item.pk).exists())
+
 
 class GetOrCreateCartUtilTests(TestCase):
     """
