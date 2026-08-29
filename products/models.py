@@ -50,6 +50,17 @@ class Product(BaseModel):
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
+        if self.base_price is not None:
+            # Coerce explicitly: Django doesn't cast DecimalField values on
+            # plain assignment/save() (only on the way to SQL, or via a
+            # ModelForm's full_clean()), so a Product created directly with
+            # a string base_price (Product.objects.create(base_price="59.99"))
+            # would otherwise keep that raw string in memory -- e.g.
+            # "59.99" * 2 == "59.9959.99" instead of Decimal("119.98") --
+            # until the instance is reloaded from the DB. Admin/API save
+            # paths already coerce via their form/serializer layer; this
+            # closes the gap for direct .create()/.save() calls.
+            self.base_price = Decimal(str(self.base_price))
         if not self.slug:
             base_slug = slugify(self.name)[:240]
             slug = base_slug
@@ -156,4 +167,11 @@ class ProductVariant(BaseModel):
 
     @property
     def price(self) -> Decimal:
-        return self.price_override if self.price_override is not None else self.product.base_price
+        if self.price_override is not None:
+            # Coerce explicitly: Django doesn't cast DecimalField values on
+            # plain assignment/save() (only on the way to SQL, or via
+            # full_clean()), so a variant created in-memory with a string
+            # override (e.g. price_override="34.99") would otherwise return
+            # that raw string here until the instance is reloaded from the DB.
+            return Decimal(self.price_override)
+        return self.product.base_price

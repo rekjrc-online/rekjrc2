@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from devices.models import Device, DevicePayload
@@ -31,7 +32,12 @@ class DevicePayloadIngestView(APIView):
         racedriver_id — Django RaceDriver pk (may be 0 or absent)
 
     Unknown devices are auto-created with name = MAC.
+
+    Open to unauthenticated callers: this is hit by ESP-NOW gateway
+    hardware in the field, which can't do Django session auth.
     """
+    permission_classes = [AllowAny]
+
     def post(self, request):
         mac = request.data.get("node", "").upper().strip()
         value = request.data.get("value", "").strip()
@@ -59,7 +65,10 @@ class DevicePayloadIngestView(APIView):
 class DevicePayloadListView(ListAPIView):
     """
     GET /api/devices/payloads/?processed=false&device=AA:BB:CC:DD:EE:FF
+
+    Open to unauthenticated callers, same as the ingest endpoint above.
     """
+    permission_classes = [AllowAny]
     serializer_class = DevicePayloadSerializer
 
     def get_queryset(self):
