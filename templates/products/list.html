@@ -24,12 +24,12 @@
         </td>
       </tr>
       <tr>
-        <td valign="top">
+        <td valign="top" width="106">
           <a href="{{ product.get_absolute_url }}">
             {% if product.thumbnail %}
-              <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" />
+              <img src="{{ product.thumbnail.url }}" alt="{{ product.name }}" class="product-thumbnail" />
             {% elif product.primary_image %}
-              <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}" />
+              <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}" class="product-thumbnail" />
             {% endif %}
           </a>
         </td>
