@@ -45,7 +45,7 @@
       <tr>
         <td colspan="2">
           {% if product.in_stock %}
-            <form method="post" action="{% url 'cart:add' store.slug %}">
+            <form method="post" action="{% url 'cart:add' store.slug %}" onclick="event.stopPropagation();">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.path }}" />
               {% for variant in product.active_variants %}
