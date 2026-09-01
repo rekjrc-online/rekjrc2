@@ -11,12 +11,12 @@ class ProductImageInline(admin.TabularInline):
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 1
-    fields = ("name", "sku", "price_override", "is_active", "sort_order")
+    fields = ("name", "sku", "price", "is_active", "sort_order")
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "store", "base_price", "is_active", "sort_order", "created_at")
+    list_display = ("name", "store", "is_active", "sort_order", "created_at")
     list_filter = ("is_active", "store")
     search_fields = ("name", "slug", "description", "store__display_name", "variants__sku")
     prepopulated_fields = {"slug": ("name",)}

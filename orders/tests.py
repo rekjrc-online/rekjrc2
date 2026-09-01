@@ -15,13 +15,8 @@ class OrderTotalsTests(TestCase):
     def test_recalculate_totals(self):
         owner = User.objects.create_user(email="owner@example.com", password="testpass123")
         store = Store.objects.create(owner=owner, display_name="RekjRC Device Store")
-        product = Product.objects.create(store=store, name="Universal Keypad", base_price="99.00")
-        # Product.save() already auto-creates a "Default" variant -- reuse it
-        # instead of creating a second one, which would collide on the
-        # (product, name) unique constraint.
-        variant = product.variants.get()
-        variant.sku = "UK-100"
-        variant.save()
+        product = Product.objects.create(store=store, name="Universal Keypad")
+        variant = ProductVariant.objects.create(product=product, sku="UK-100", price="99.00")
         order = Order.objects.create(store=store, email="jason@example.com", shipping_cost=Decimal("5.00"))
         OrderItem.objects.create(
             order=order, variant=variant, product_name=product.name,
@@ -34,14 +29,10 @@ class OrderTotalsTests(TestCase):
     def test_recalculate_totals_with_multiple_items(self):
         owner = User.objects.create_user(email="owner2@example.com", password="testpass123")
         store = Store.objects.create(owner=owner, display_name="RekjRC Device Store 2")
-        product = Product.objects.create(store=store, name="Universal Keypad", base_price="99.00")
-        variant = product.variants.get()
-        variant.sku = "UK-200"
-        variant.save()
-        second_product = Product.objects.create(store=store, name="Crawler Comp Kit", base_price="59.99")
-        second_variant = second_product.variants.get()
-        second_variant.sku = "CCK-200"
-        second_variant.save()
+        product = Product.objects.create(store=store, name="Universal Keypad")
+        variant = ProductVariant.objects.create(product=product, sku="UK-200", price="99.00")
+        second_product = Product.objects.create(store=store, name="Crawler Comp Kit")
+        second_variant = ProductVariant.objects.create(product=second_product, sku="CCK-200", price="59.99")
 
         order = Order.objects.create(store=store, email="jason@example.com", shipping_cost=Decimal("10.00"))
         OrderItem.objects.create(
@@ -67,10 +58,8 @@ class OrderTotalsTests(TestCase):
     def test_order_item_line_total(self):
         owner = User.objects.create_user(email="owner4@example.com", password="testpass123")
         store = Store.objects.create(owner=owner, display_name="Line Total Store")
-        product = Product.objects.create(store=store, name="Drag Race Kit", base_price="25.00")
-        variant = product.variants.get()
-        variant.sku = "DR-100"
-        variant.save()
+        product = Product.objects.create(store=store, name="Drag Race Kit")
+        variant = ProductVariant.objects.create(product=product, sku="DR-100", price="25.00")
         order = Order.objects.create(store=store, email="jason@example.com")
         item = OrderItem.objects.create(
             order=order, variant=variant, product_name=product.name,

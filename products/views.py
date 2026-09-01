@@ -35,7 +35,7 @@ def product_detail(request, store_slug, slug):
 # of the site's one-model-per-page CRUD style.
 # ----------------------------------------------------------------------
 
-PRODUCT_EDITABLE_FIELDS = ["name", "description", "base_price", "is_active", "sort_order"]
+PRODUCT_EDITABLE_FIELDS = ["name", "description", "is_active", "sort_order"]
 
 
 class ProductManageMixin(LoginRequiredMixin):
@@ -67,7 +67,7 @@ class ManageList(ProductManageMixin, ListView):
     context_object_name = "products"
 
     def get_queryset(self):
-        # manage_list.html lists each product's variants (price/override)
+        # manage_list.html lists each product's variants (with price)
         # inline, so prefetch them here to avoid an N+1 query per product.
         return super().get_queryset().prefetch_related("variants")
 
@@ -130,7 +130,7 @@ class VariantManageMixin(ProductChildManageMixin):
         return reverse("products:manage_variants", kwargs={"store_slug": self.store.slug, "slug": self.product.slug})
 
 
-VARIANT_EDITABLE_FIELDS = ["name", "sku", "price_override", "is_active", "sort_order"]
+VARIANT_EDITABLE_FIELDS = ["name", "sku", "price", "is_active", "sort_order"]
 
 
 class ManageVariantList(VariantManageMixin, ListView):

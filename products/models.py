@@ -16,6 +16,12 @@ class Product(BaseModel):
     Inventory is a simple on/off toggle (is_active) rather than a stock
     count -- unlist a product/variant by unchecking is_active instead of
     tracking quantity on hand.
+
+    Carries no price of its own -- every Product is sold entirely through
+    its ProductVariants, each of which has its own required price (see
+    ProductVariant.price). A freshly created Product has zero variants and
+    is not purchasable (in_stock is False) until an owner explicitly adds
+    at least one priced variant.
     """
     store = models.ForeignKey(
         "stores.Store",
@@ -25,11 +31,6 @@ class Product(BaseModel):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, blank=True)
     description = models.TextField(blank=True)
-    base_price = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        help_text="Price in USD. Used for any variant that doesn't set its own price_override.",
-    )
     is_active = models.BooleanField(
         default=True,
         help_text="Uncheck to unlist this product from the store without deleting it.",
@@ -49,18 +50,6 @@ class Product(BaseModel):
         return f"{self.name} ({self.store.display_name})"
 
     def save(self, *args, **kwargs):
-        is_new = self._state.adding
-        if self.base_price is not None:
-            # Coerce explicitly: Django doesn't cast DecimalField values on
-            # plain assignment/save() (only on the way to SQL, or via a
-            # ModelForm's full_clean()), so a Product created directly with
-            # a string base_price (Product.objects.create(base_price="59.99"))
-            # would otherwise keep that raw string in memory -- e.g.
-            # "59.99" * 2 == "59.9959.99" instead of Decimal("119.98") --
-            # until the instance is reloaded from the DB. Admin/API save
-            # paths already coerce via their form/serializer layer; this
-            # closes the gap for direct .create()/.save() calls.
-            self.base_price = Decimal(str(self.base_price))
         if not self.slug:
             base_slug = slugify(self.name)[:240]
             slug = base_slug
@@ -70,14 +59,6 @@ class Product(BaseModel):
                 i += 1
             self.slug = slug
         super().save(*args, **kwargs)
-        if is_new and not self.variants.exists():
-            # A product needs at least one active variant to be purchasable
-            # (see in_stock below) -- give it one automatically so a product
-            # created without ever touching the admin's variant inline is
-            # still sellable. SKU is derived from the pk (guaranteed unique)
-            # rather than the slug, since ProductVariant.sku is unique
-            # across all stores/products, not just within this one.
-            self.variants.create(name="Default", sku=f"product-{self.pk}")
 
     def get_absolute_url(self):
         return reverse("products:detail", kwargs={"store_slug": self.store.slug, "slug": self.slug})
@@ -92,9 +73,9 @@ class Product(BaseModel):
 
     @property
     def display_price(self):
-        """Lowest active variant price, or base_price if there are no variants."""
+        """Lowest active variant price, or None if there are no active variants."""
         prices = [v.price for v in self.active_variants]
-        return min(prices) if prices else self.base_price
+        return min(prices) if prices else None
 
     @property
     def primary_image(self):
@@ -136,7 +117,8 @@ class ProductVariant(BaseModel):
     A buyable option of a Product (e.g. "Black", "Rev B", or just "Default"
     for a product with no real options). Every Product needs at least one
     active variant to be purchasable -- the cart adds ProductVariants, not
-    Products directly.
+    Products directly. price is required -- Product itself carries no price,
+    so every variant must set its own.
     """
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     name = models.CharField(
@@ -145,12 +127,10 @@ class ProductVariant(BaseModel):
         help_text='e.g. "Black", "Rev B" -- or leave as "Default" if this product has no options.',
     )
     sku = models.CharField(max_length=64, unique=True)
-    price_override = models.DecimalField(
+    price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="Leave blank to use the product's base price.",
+        help_text="Price in USD.",
     )
     is_active = models.BooleanField(
         default=True,
@@ -165,13 +145,16 @@ class ProductVariant(BaseModel):
     def __str__(self):
         return f"{self.product.name} - {self.name}"
 
-    @property
-    def price(self) -> Decimal:
-        if self.price_override is not None:
+    def save(self, *args, **kwargs):
+        if self.price is not None:
             # Coerce explicitly: Django doesn't cast DecimalField values on
-            # plain assignment/save() (only on the way to SQL, or via
-            # full_clean()), so a variant created in-memory with a string
-            # override (e.g. price_override="34.99") would otherwise return
-            # that raw string here until the instance is reloaded from the DB.
-            return Decimal(self.price_override)
-        return self.product.base_price
+            # plain assignment/save() (only on the way to SQL, or via a
+            # ModelForm's full_clean()), so a variant created directly with
+            # a string price (ProductVariant.objects.create(price="34.99"))
+            # would otherwise keep that raw string in memory -- e.g.
+            # "34.99" * 2 == "34.9934.99" instead of Decimal("69.98") --
+            # until the instance is reloaded from the DB. Admin/API save
+            # paths already coerce via their form layer; this closes the
+            # gap for direct .create()/.save() calls.
+            self.price = Decimal(str(self.price))
+        super().save(*args, **kwargs)

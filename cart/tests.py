@@ -14,15 +14,8 @@ class CartTests(TestCase):
         owner = User.objects.create_user(email="owner@example.com", password="testpass123")
         self.store = Store.objects.create(
             owner=owner, display_name="RekjRC Device Store", is_storefront_enabled=True)
-        self.product = Product.objects.create(store=self.store, name="Crawler Comp Kit", base_price="59.99")
-        # Product.save() auto-creates a "Default" variant for every new
-        # product (so it's sellable without ever touching the admin's
-        # variant inline) -- reuse that one rather than creating a second
-        # "Default" variant, which would collide on the (product, name)
-        # unique constraint.
-        self.variant = self.product.variants.get()
-        self.variant.sku = "CCK-001"
-        self.variant.save()
+        self.product = Product.objects.create(store=self.store, name="Crawler Comp Kit")
+        self.variant = ProductVariant.objects.create(product=self.product, sku="CCK-001", price="59.99")
 
     def test_add_to_cart_via_view(self):
         response = self.client.post(
@@ -42,7 +35,7 @@ class CartTests(TestCase):
 
     def test_cart_subtotal_sums_multiple_items(self):
         second_variant = ProductVariant.objects.create(
-            product=self.product, name="Black", sku="CCK-002", price_override="49.99")
+            product=self.product, name="Black", sku="CCK-002", price="49.99")
         cart = Cart.objects.create(store=self.store)
         CartItem.objects.create(cart=cart, variant=self.variant, quantity=2)
         CartItem.objects.create(cart=cart, variant=second_variant, quantity=3)
@@ -51,7 +44,7 @@ class CartTests(TestCase):
 
     def test_cart_item_count_sums_across_items(self):
         second_variant = ProductVariant.objects.create(
-            product=self.product, name="Black", sku="CCK-003", price_override="49.99")
+            product=self.product, name="Black", sku="CCK-003", price="49.99")
         cart = Cart.objects.create(store=self.store)
         CartItem.objects.create(cart=cart, variant=self.variant, quantity=2)
         CartItem.objects.create(cart=cart, variant=second_variant, quantity=5)
