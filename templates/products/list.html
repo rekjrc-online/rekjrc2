@@ -11,7 +11,7 @@
 </div>
 
 {% for product in products %}
-  <div class="post">
+  <div class="post" onclick="window.location='{{ product.get_absolute_url }}';" style="cursor: pointer;">
     <table cellpadding="5" cellspacing="0">
       <tr>
         <td colspan="2">
