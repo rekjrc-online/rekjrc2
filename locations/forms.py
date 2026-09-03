@@ -30,13 +30,19 @@ class LocationForm(ModelForm):
         max_digits=9,
         decimal_places=6,
         required=False,
-        widget=forms.NumberInput(attrs={"step": "0.000001", "placeholder": "e.g. 34.052235"}),
+        # step="any" (not "0.000001"): with a fixed step, the browser's own
+        # HTML5 constraint validation rejects a pasted value with more than
+        # 6 decimal digits as a "step mismatch" and blocks the POST before
+        # it ever reaches Django -- the RoundedDecimalField rounding above
+        # never gets a chance to run. step="any" turns that native check
+        # off and leaves rounding entirely to the server.
+        widget=forms.NumberInput(attrs={"step": "any", "placeholder": "e.g. 34.052235"}),
     )
     longitude = RoundedDecimalField(
         max_digits=9,
         decimal_places=6,
         required=False,
-        widget=forms.NumberInput(attrs={"step": "0.000001", "placeholder": "-118.243683"}),
+        widget=forms.NumberInput(attrs={"step": "any", "placeholder": "-118.243683"}),
     )
 
     class Meta:
