@@ -17,13 +17,13 @@ class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
     model = Location
-    fields = "__all__"
+    form_class = LocationForm
     action = "Create"
     template_name = "crud/form.html"
 
 class Update_(CrudAuthMixin, CrudContextMixin, UpdateView):
     model = Location
-    fields = "__all__"
+    form_class = LocationForm
     action = "Edit"
     template_name = "crud/form.html"
     slug_field = "uuid"
