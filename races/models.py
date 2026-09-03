@@ -3,13 +3,11 @@ from django.conf import settings
 from django.urls import reverse
 from PIL import Image, ImageDraw, ImageFont
 from rekjrc.base_models import BaseModel, Ownable
-from clubs.models import Club
 from devices.models import Device
 from events.models import Event
 from locations.models import Location
 from teams.models import Team
 from tracks.models import Track
-from stores.models import Store
 import qrcode
 import os
 
@@ -56,28 +54,10 @@ class Race(BaseModel, Ownable):
         related_name='races',
         null=True,
         blank=True)
-    club = models.ForeignKey(
-        Club,
-        on_delete=models.SET_NULL,
-        related_name='races',
-        null=True,
-        blank=True)
-    team = models.ForeignKey(
-        Team,
-        on_delete=models.SET_NULL,
-        related_name='races',
-        null=True,
-        blank=True)
     judge_team = models.ForeignKey(
         Team,
         on_delete=models.SET_NULL,
         related_name='judge_races',
-        null=True,
-        blank=True)
-    store = models.ForeignKey(
-        Store,
-        on_delete=models.SET_NULL,
-        related_name='races',
         null=True,
         blank=True)
     TRANSPONDER_CHOICES = [

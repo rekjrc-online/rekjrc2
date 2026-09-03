@@ -22,7 +22,7 @@ class RaceForm(forms.ModelForm):
         model = Race
         fields = [
             'display_name', 'race_type', 'event', 'location', 'track',
-            'club', 'team', 'store', 'transponder', 'device', 'entry_locked',
+            'transponder', 'device', 'entry_locked',
             'race_finished', 'is_active'
         ]
         widgets = {

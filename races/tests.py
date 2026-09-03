@@ -2,12 +2,9 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from races.forms import RaceForm, RaceDriverForm
 from races.models import Race
-from clubs.models import Club
 from events.models import Event
 from locations.models import Location
-from teams.models import Team
 from tracks.models import Track
-from stores.models import Store
 from builds.models import Build
 from drivers.models import Driver
 
@@ -16,12 +13,9 @@ User = get_user_model()
 class RaceFormTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(email="tester@test.com", password="pass")
-        self.club = Club.objects.create(display_name="Test Club", owner=self.user)
         self.location = Location.objects.create(display_name="Test Location", owner=self.user)
         self.event = Event.objects.create(display_name="Test Event", owner=self.user)
         self.track = Track.objects.create(display_name="Test Track", owner=self.user)
-        self.team = Team.objects.create(display_name="Test Team", owner=self.user)
-        self.store = Store.objects.create(display_name="Test Store", owner=self.user)
 
     def test_race_form_valid(self):
         form_data = {
@@ -30,9 +24,6 @@ class RaceFormTests(TestCase):
             'event': self.event.pk,
             'location': self.location.pk,
             'track': self.track.pk,
-            'club': self.club.pk,
-            'team': self.team.pk,
-            'store': self.store.pk,
             'transponder': 'LapMonitor',
             'entry_locked': True,
             'race_finished': False,
