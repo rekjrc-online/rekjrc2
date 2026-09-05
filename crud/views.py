@@ -88,6 +88,21 @@ class CrudContextMixin:
         ctx["model_name"] = self.model_name or model._meta.verbose_name
         ctx["model_name_plural"] = self.model_name_plural or model._meta.verbose_name_plural
         ctx["action"] = self.action
+
+        # List views: split into active/inactive so crud/list.html can render
+        # an unlabeled "active" section followed by a labeled "Inactive"
+        # section (only shown when non-empty). Models without an is_active
+        # field (this template is only used by Ownable models today, which
+        # all have one) just get everything treated as active.
+        object_list = ctx.get("object_list")
+        if object_list is not None:
+            if any(f.name == "is_active" for f in model._meta.fields):
+                ctx["active_objects"] = [o for o in object_list if o.is_active]
+                ctx["inactive_objects"] = [o for o in object_list if not o.is_active]
+            else:
+                ctx["active_objects"] = object_list
+                ctx["inactive_objects"] = []
+
         obj = ctx.get("object")
         if obj:
             ctx["is_owner"] = hasattr(obj, "owner") and obj.owner == self.request.user
