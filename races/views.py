@@ -25,6 +25,8 @@ class Start_(View):
                 return redirect("crawler:start", race_uuid=race.uuid)
             case "Stopwatch Race":
                 return redirect("stopwatch:start", race_uuid=race.uuid)
+            case "Rally":
+                return redirect("stopwatch:start", race_uuid=race.uuid)
             case "Long Jump":
                 return redirect("longjump:start", race_uuid=race.uuid)
             case "Top Speed":

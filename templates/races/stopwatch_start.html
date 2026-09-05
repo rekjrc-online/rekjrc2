@@ -23,8 +23,12 @@
                     {% if d.run and d.run.elapsed_time %}
                         --
                     {% else %}
-                        <a href="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}">
+                        <a href="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}?mode=run">
                             Run
+                        </a>
+                        |
+                        <a href="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}?mode=enter">
+                            Enter
                         </a>
                     {% endif %}
                 </td>

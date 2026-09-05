@@ -28,10 +28,14 @@ class Race_(LoginRequiredMixin, View):
             return redirect("stopwatch:start", race_uuid=race.uuid)
         racedriver = get_object_or_404(RaceDriver, uuid=racedriver_uuid)
         run, _ = StopwatchRun.objects.get_or_create(race=race, racedriver=racedriver)
+        mode = request.GET.get('mode', 'run')
+        if mode not in ('run', 'enter'):
+            mode = 'run'
         return render(request, self.template_name, {
             'race': race,
             'racedriver': racedriver,
-            'run': run })
+            'run': run,
+            'mode': mode })
     def post(self, request, race_uuid, racedriver_uuid):
         race = get_object_or_404(Race.for_user(request.user), uuid=race_uuid)
         if race.owner != request.user:
