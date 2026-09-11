@@ -435,7 +435,8 @@ form textarea {
 }
 
 /* Submit button */
-form button[type="submit"] {
+form button[type="submit"],
+.btn-form-style {
     width: 100%;
     padding: 0.75rem;
     border: none;
@@ -450,7 +451,8 @@ form button[type="submit"] {
     transition: 0.2s background ease;
 }
 
-form button[type="submit"]:hover {
+form button[type="submit"]:hover,
+.btn-form-style:hover {
     background: var(--border-post);
 }
 

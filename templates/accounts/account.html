@@ -36,7 +36,9 @@
     <center>
         <h3>Verify a Friend</h3>
         <p class="muted">Scan another member's account QR code to verify their account.</p>
-        <a href="{% url 'accounts:verify' %}"><button type="button">Verify a Friend</button></a>
+        <form method="get" action="{% url 'accounts:verify' %}">
+            <button type="submit">Verify a Friend</button>
+        </form>
     </center>
 </div>
 {% endif %}
