@@ -23,8 +23,14 @@
      No server round-trip needed to decode -- only the extracted uuid is
      ever sent, as a normal page navigation to VerifyConfirmView (see
      accounts.views.VerifyConfirmView). Same pattern as
-     events/checkin.html's "Scan account QR". -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+     events/checkin.html's "Scan account QR". Vendored locally at
+     static/jsQR.min.js (jsQR 1.4.0 from jsdelivr) instead of loaded from
+     cdnjs -- cdnjs never actually had this library at the path both this
+     page and events/checkin.html used to reference (confirmed via cdnjs's
+     own API returning "Library not found"), so that script tag 404'd
+     everywhere, every time, for everyone -- not a local network/firewall
+     issue. -->
+<script src="/static/jsQR.min.js"></script>
 <script>
   (function () {
     var scanBtn    = document.querySelector("#scan-qr-btn");
@@ -71,7 +77,7 @@
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.width  = video.videoWidth;
         canvas.height = video.videoHeight;
-        var ctx2d = canvas.getContext("2d");
+        var ctx2d = canvas.getContext("2d", { willReadFrequently: true });
         ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
         var imageData = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
         var code = jsQR(imageData.data, imageData.width, imageData.height);

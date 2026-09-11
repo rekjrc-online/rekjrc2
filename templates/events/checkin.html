@@ -179,8 +179,13 @@
 
 <!-- jsQR: pure-JS QR decoder, reads frames off the camera video via canvas.
      No server round-trip needed to decode -- only the extracted uuid is
-     ever sent, as a normal ?q= search (see Checkin_.get_context_data). -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+     ever sent, as a normal ?q= search (see Checkin_.get_context_data).
+     Vendored locally at static/jsQR.min.js (jsQR 1.4.0 from jsdelivr)
+     instead of loaded from cdnjs -- cdnjs never actually had this library
+     at the path this used to reference (confirmed via cdnjs's own API
+     returning "Library not found"), so this script tag 404'd for
+     everyone, always -- the QR-scan button here never worked. -->
+<script src="/static/jsQR.min.js"></script>
 <script>
   (function () {
     var scanBtn    = document.querySelector("#scan-qr-btn");
@@ -237,7 +242,7 @@
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvas.width  = video.videoWidth;
         canvas.height = video.videoHeight;
-        var ctx2d = canvas.getContext("2d");
+        var ctx2d = canvas.getContext("2d", { willReadFrequently: true });
         ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
         var imageData = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
         var code = jsQR(imageData.data, imageData.width, imageData.height);
