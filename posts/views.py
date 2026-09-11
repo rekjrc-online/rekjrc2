@@ -1,16 +1,33 @@
 from django.apps import apps
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from django.http import JsonResponse, HttpResponseNotAllowed
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import DetailView, CreateView
 from rekjrc.base_models import Ownable
 from .forms import PostForm
 from .models import Post, PostLike
+
+class VerifiedRequiredMixin(LoginRequiredMixin):
+    """
+    Requires login (via LoginRequiredMixin) AND Account.is_verified --
+    posting/replying is restricted to verified accounts. An unverified
+    logged-in user is bounced to their account page with an explanatory
+    message instead of the login-page redirect LoginRequiredMixin would
+    otherwise give a logged-out visitor.
+    """
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.is_verified:
+            messages.error(
+                request,
+                "Your account is not verified. You must verify your account before you can post/reply.")
+            return redirect("accounts:account")
+        return super().dispatch(request, *args, **kwargs)
 
 def _annotate_liked(queryset, user):
     """Annotate a Post queryset with liked_by_user for the given user."""
@@ -61,7 +78,7 @@ class PostDetail(DetailView):
         ctx['parent_post'] = post.parent if hasattr(post, 'parent') else None
         return ctx
 
-class PostCreateView(LoginRequiredMixin, CreateView):
+class PostCreateView(VerifiedRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = "posts/form.html"
@@ -88,7 +105,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         ctx['user_owned'] = owned_list
         return ctx
 
-class PostReplyView(LoginRequiredMixin, CreateView):
+class PostReplyView(VerifiedRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = "posts/form.html"

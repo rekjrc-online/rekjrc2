@@ -31,4 +31,13 @@
         </a>
     </center>
 </div>
+{% if user.is_verified %}
+<div class="panel">
+    <center>
+        <h3>Verify a Friend</h3>
+        <p class="muted">Scan another member's account QR code to verify their account.</p>
+        <a href="{% url 'accounts:verify' %}"><button type="button">Verify a Friend</button></a>
+    </center>
+</div>
+{% endif %}
 {% endblock %}

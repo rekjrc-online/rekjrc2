@@ -1,6 +1,6 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import AccountEditView, RegisterView, LoginView
+from .views import AccountEditView, RegisterView, LoginView, VerifyFriendView, VerifyConfirmView
 
 app_name = "accounts"
 
@@ -8,6 +8,14 @@ urlpatterns = [
     path("",
          AccountEditView.as_view(),
          name="account"),
+
+    path("verify/",
+         VerifyFriendView.as_view(),
+         name="verify"),
+
+    path("verify/confirm/<uuid:target_uuid>/",
+         VerifyConfirmView.as_view(),
+         name="verify_confirm"),
 
     path("login/",
         LoginView.as_view(),

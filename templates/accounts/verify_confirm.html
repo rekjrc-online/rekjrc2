@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/accounts/verify_confirm.html -->
+<div class="panel" style="text-align:center;">
+    <h3>Confirm Verification</h3>
+    {% if target.is_verified %}
+        <p>{{ target.get_full_name|default:target.email }} is already verified.</p>
+        <a href="{% url 'accounts:account' %}">Back to My Account</a>
+    {% else %}
+        <p>
+            Verify this account?<br />
+            <strong>{{ target.get_full_name|default:"-" }}</strong><br />
+            {{ target.email }}
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Confirm &amp; Verify</button>
+        </form>
+        <p><a href="{% url 'accounts:verify' %}">Cancel</a></p>
+    {% endif %}
+</div>
+{% endblock %}

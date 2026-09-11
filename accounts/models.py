@@ -95,6 +95,60 @@ class User(AbstractUser):
         os.makedirs(qr_folder, exist_ok=True)
         final_img.save(os.path.join(qr_folder, f"{self.uuid}.png"))
 
+class VerificationLog(models.Model):
+    """
+    Permanent record of one "Verify a Friend" QR verification (see
+    accounts.views.VerifyConfirmView) -- an already-verified user scanning
+    another account's QR code and setting that account's is_verified to
+    True. Insert-only: save()/delete() below refuse any update or removal
+    of an existing row, and accounts.admin.VerificationLogAdmin blocks
+    add/change/delete from the admin UI too (rows are created only by
+    VerifyConfirmView).
+
+    verifier/verified_user are nullable FKs (on_delete=SET_NULL) so deleting
+    either User doesn't cascade the log row away -- but the *_uuid/_email/
+    _name fields alongside them are snapshotted at creation time and never
+    touched again, so the row stays meaningful (who verified whom, and
+    when) even after one or both accounts are gone and the FK has gone
+    null. Don't add a way to backfill/repair those snapshot fields from the
+    live User record -- the whole point is that they're frozen at the
+    moment of verification.
+    """
+    uuid = models.UUIDField(default=uuid_lib.uuid4, editable=False, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    verifier = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="verifications_performed")
+    verifier_uuid = models.UUIDField(editable=False)
+    verifier_email = models.EmailField(editable=False)
+    verifier_name = models.CharField(max_length=255, editable=False, blank=True)
+
+    verified_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="verifications_received")
+    verified_uuid = models.UUIDField(editable=False)
+    verified_email = models.EmailField(editable=False)
+    verified_name = models.CharField(max_length=255, editable=False, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.verifier_email} verified {self.verified_email} on {self.created_at:%Y-%m-%d}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("VerificationLog rows are permanent and cannot be modified after creation.")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("VerificationLog rows are permanent and cannot be deleted.")
+
 class Follow(BaseModel):
     follower = models.ForeignKey(
         settings.AUTH_USER_MODEL,

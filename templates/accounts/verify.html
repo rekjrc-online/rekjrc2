@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- templates/accounts/verify.html -->
+<div class="panel" style="text-align:center;">
+    <h3>Verify a Friend</h3>
+    <p class="muted">
+        Point your camera at the account QR code on your friend's
+        <a href="{% url 'accounts:account' %}">Account</a> page to verify them.
+    </p>
+</div>
+
+<div class="panel" style="text-align:center;">
+    <button type="button" id="scan-qr-btn">Activate Camera</button>
+    <div id="qr-scan-panel" style="display:none; margin-top:10px;">
+        <video id="qr-video" muted playsinline style="max-width:320px; width:100%;"></video>
+        <canvas id="qr-canvas" style="display:none;"></canvas>
+        <p class="muted" id="qr-scan-status">Point the camera at your friend's account QR code.</p>
+        <button type="button" id="qr-cancel-btn">Cancel</button>
+    </div>
+</div>
+
+<!-- jsQR: pure-JS QR decoder, reads frames off the camera video via canvas.
+     No server round-trip needed to decode -- only the extracted uuid is
+     ever sent, as a normal page navigation to VerifyConfirmView (see
+     accounts.views.VerifyConfirmView). Same pattern as
+     events/checkin.html's "Scan account QR". -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<script>
+  (function () {
+    var scanBtn    = document.querySelector("#scan-qr-btn");
+    var scanPanel  = document.querySelector("#qr-scan-panel");
+    var video      = document.querySelector("#qr-video");
+    var canvas     = document.querySelector("#qr-canvas");
+    var scanStatus = document.querySelector("#qr-scan-status");
+    var cancelBtn  = document.querySelector("#qr-cancel-btn");
+
+    var stream = null;
+    var rafId  = null;
+
+    function stopScan() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      if (stream) {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        stream = null;
+      }
+      scanPanel.style.display = "none";
+    }
+
+    function handleDecoded(text) {
+      var payload;
+      try {
+        payload = JSON.parse(text);
+      } catch (e) {
+        scanStatus.textContent = "That doesn't look like an account QR code -- try again.";
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      // accounts.User._generate_qr() encodes {"uuid": "...", "type": "user"}
+      // (accounts/models.py) -- reject anything else.
+      if (!payload.uuid || (payload.type && payload.type !== "user")) {
+        scanStatus.textContent = "That doesn't look like an account QR code -- try again.";
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      stopScan();
+      window.location.href = "/accounts/verify/confirm/" + encodeURIComponent(payload.uuid) + "/";
+    }
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var ctx2d = canvas.getContext("2d");
+        ctx2d.drawImage(video, 0, 0, canvas.width, canvas.height);
+        var imageData = ctx2d.getImageData(0, 0, canvas.width, canvas.height);
+        var code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          handleDecoded(code.data);
+          return;
+        }
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    if (scanBtn) {
+      scanBtn.addEventListener("click", function () {
+        scanPanel.style.display = "block";
+        // Camera access needs a secure context -- HTTPS, or localhost
+        // during local dev -- browsers withhold navigator.mediaDevices
+        // entirely on plain HTTP anywhere else, so this has to be checked
+        // before calling getUserMedia rather than relying on its .catch()
+        // (a missing mediaDevices throws synchronously, uncaught).
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          scanStatus.textContent = "Camera access isn't available here -- this page needs to be loaded over HTTPS (or localhost).";
+          return;
+        }
+        scanStatus.textContent = "Point the camera at your friend's account QR code.";
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+          .then(function (s) {
+            stream = s;
+            video.srcObject = s;
+            video.play();
+            rafId = requestAnimationFrame(tick);
+          })
+          .catch(function (err) {
+            scanStatus.textContent = "Couldn't access the camera: " + err.message;
+          });
+      });
+    }
+
+    if (cancelBtn) cancelBtn.addEventListener("click", stopScan);
+    window.addEventListener("beforeunload", stopScan);
+  })();
+</script>
+{% endblock %}

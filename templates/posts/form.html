@@ -20,7 +20,7 @@
         <h3>Create New Post</h3>
     {% endif %}
 
-    {% if not user.is_authenticated %}
+    {% if not user.is_verified %}
         <p class="text-danger">
             Your account is not verified. You must verify your account before you can post/reply.
         </p>
