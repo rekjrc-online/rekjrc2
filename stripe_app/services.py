@@ -86,6 +86,35 @@ def create_checkout_session_for_order(order, request):
     return session
 
 
+def send_order_confirmation_email(order):
+    """
+    Emails the order's receipt to order.email. Uses fail_silently=True so a
+    bad/missing SMTP config never blocks mark_order_paid from recording the
+    payment itself -- the Stripe webhook still needs to return 200 either way.
+    """
+    from django.conf import settings
+    from django.core.mail import send_mail
+
+    lines = [f"Thanks for your order! Here's your receipt for order {order.uuid}.", ""]
+    for item in order.items.all():
+        name = f"{item.product_name} - {item.variant_name}" if item.variant_name else item.product_name
+        lines.append(f"  {item.quantity} x {name} - ${item.line_total:.2f}")
+    lines += [
+        "",
+        f"Subtotal: ${order.subtotal:.2f}",
+        f"Shipping: ${order.shipping_cost:.2f}",
+        f"Total: ${order.total:.2f}",
+    ]
+
+    send_mail(
+        subject=f"Order confirmation - {order.uuid}",
+        message="\n".join(lines),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[order.email],
+        fail_silently=True,
+    )
+
+
 def mark_order_paid(order, session):
     """
     Applies a completed/paid Stripe Checkout Session to an Order (and logs
@@ -95,7 +124,9 @@ def mark_order_paid(order, session):
     from django.utils import timezone
     from stripe_app.models import StripePaymentLog
 
-    if order.status != order.STATUS_PAID:
+    already_paid = order.status == order.STATUS_PAID
+
+    if not already_paid:
         order.status = order.STATUS_PAID
         order.stripe_payment_intent = getattr(session, "payment_intent", None) or order.stripe_payment_intent
         order.paid_at = timezone.now()
@@ -113,6 +144,9 @@ def mark_order_paid(order, session):
             "paid_at": order.paid_at,
         },
     )
+
+    if not already_paid:
+        send_order_confirmation_email(order)
 
 
 def sync_order_from_checkout_session(order, session_id):
