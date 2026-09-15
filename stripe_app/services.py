@@ -93,7 +93,7 @@ def send_order_confirmation_email(order):
     payment itself -- the Stripe webhook still needs to return 200 either way.
     """
     from django.conf import settings
-    from django.core.mail import send_mail
+    from django.core.mail import EmailMessage
 
     lines = [f"Thanks for your order! Here's your receipt for order {order.uuid}.", ""]
     for item in order.items.all():
@@ -106,13 +106,14 @@ def send_order_confirmation_email(order):
         f"Total: ${order.total:.2f}",
     ]
 
-    send_mail(
+    message = EmailMessage(
         subject=f"Order confirmation - {order.uuid}",
-        message="\n".join(lines),
+        body="\n".join(lines),
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[order.email],
-        fail_silently=True,
+        to=[order.email],
+        reply_to=[settings.REPLY_TO_EMAIL],
     )
+    message.send(fail_silently=True)
 
 
 def mark_order_paid(order, session):
