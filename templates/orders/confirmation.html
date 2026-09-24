@@ -23,6 +23,7 @@
     {% endfor %}
   </table>
   <p>Subtotal: ${{ order.subtotal }}<br />
+     {% if order.discount_amount %}Promo code {{ order.promo_code_text }}: -${{ order.discount_amount }}<br />{% endif %}
      Shipping: ${{ order.shipping_cost }}<br />
      <strong>Total: ${{ order.total }}</strong></p>
 </div>

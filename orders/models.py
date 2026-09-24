@@ -45,6 +45,18 @@ class Order(BaseModel):
     shipping_country = models.CharField(max_length=100, blank=True)
 
     subtotal = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0.00"))
+    # Promo code snapshot: promo_code_text/discount_amount keep the order
+    # accurate even if the PromoCode row is later edited or deleted (hence
+    # SET_NULL on the FK), same idea as OrderItem's name/price snapshot.
+    promo_code = models.ForeignKey(
+        "cart.PromoCode",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
+    promo_code_text = models.CharField(max_length=50, blank=True)
+    discount_amount = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0.00"))
     # TODO(shipping): no shipping-rate calculation is wired up yet (flagged
     # during scoping 2026-08-07, deliberately deferred). Set manually per
     # order -- via admin -- until real rates are built.
@@ -67,7 +79,7 @@ class Order(BaseModel):
 
     def recalculate_totals(self):
         self.subtotal = sum((item.line_total for item in self.items.all()), Decimal("0.00"))
-        self.total = self.subtotal + self.shipping_cost
+        self.total = self.subtotal - self.discount_amount + self.shipping_cost
 
 
 class OrderItem(BaseModel):

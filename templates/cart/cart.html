@@ -38,7 +38,28 @@
       <hr />
     {% endfor %}
 
-    <p><strong>Subtotal: ${{ cart.subtotal }}</strong></p>
+    {% if cart.promo_code %}
+      <p>Subtotal: ${{ cart.subtotal }}</p>
+      <p>Promo code <strong>{{ cart.promo_code.code }}</strong> ({{ cart.promo_code.discount_percent|floatformat:"-2" }}% off): -${{ cart.discount_amount }}</p>
+      <form method="post" action="{% url 'cart:remove_promo' store.slug %}" class="remove-form">
+        {% csrf_token %}
+        <button type="submit">Remove promo code</button>
+      </form>
+      <p><strong>Total: ${{ cart.total }}</strong></p>
+    {% else %}
+      <p><strong>Subtotal: ${{ cart.subtotal }}</strong></p>
+      <form method="post" action="{% url 'cart:apply_promo' store.slug %}">
+        {% csrf_token %}
+        <table>
+          <tr>
+            <td>Promo code:&nbsp;</td>
+            <td><input type="text" name="promo_code" style="width:140px;" /></td>
+            <td><button type="submit">Apply</button></td>
+            <td width="100%">&nbsp;</td>
+          </tr>
+        </table>
+      </form>
+    {% endif %}
     <p class="muted">Shipping is calculated at checkout.</p>
 
     <a href="{% url 'orders:checkout' store.slug %}" class="btn btn-primary">Checkout</a>

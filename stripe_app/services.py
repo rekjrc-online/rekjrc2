@@ -73,6 +73,22 @@ def create_checkout_session_for_order(order, request):
     ) + "?session_id={CHECKOUT_SESSION_ID}"
     cancel_url = request.build_absolute_uri(reverse("cart:detail", kwargs={"store_slug": store.slug}))
 
+    session_kwargs = {}
+    if order.discount_amount > 0:
+        # One-off, single-use Stripe coupon for this order's exact discount
+        # (already computed/rounded on the Order), so the amount Stripe
+        # charges matches order.total to the cent instead of re-deriving the
+        # percent across line items on Stripe's side.
+        coupon = stripe.Coupon.create(
+            amount_off=int(round(order.discount_amount * 100)),
+            currency="usd",
+            duration="once",
+            max_redemptions=1,
+            name=f"Promo {order.promo_code_text}"[:40],
+            metadata={"order_uuid": str(order.uuid), "promo_code": order.promo_code_text},
+        )
+        session_kwargs["discounts"] = [{"coupon": coupon.id}]
+
     session = stripe.checkout.Session.create(
         mode="payment",
         payment_method_types=["card"],
@@ -82,6 +98,7 @@ def create_checkout_session_for_order(order, request):
         metadata={"order_uuid": str(order.uuid), "store_uuid": str(store.uuid)},
         success_url=success_url,
         cancel_url=cancel_url,
+        **session_kwargs,
     )
     return session
 
@@ -99,9 +116,10 @@ def send_order_confirmation_email(order):
     for item in order.items.all():
         name = f"{item.product_name} - {item.variant_name}" if item.variant_name else item.product_name
         lines.append(f"  {item.quantity} x {name} - ${item.line_total:.2f}")
+    lines += ["", f"Subtotal: ${order.subtotal:.2f}"]
+    if order.discount_amount:
+        lines.append(f"Promo code {order.promo_code_text}: -${order.discount_amount:.2f}")
     lines += [
-        "",
-        f"Subtotal: ${order.subtotal:.2f}",
         f"Shipping: ${order.shipping_cost:.2f}",
         f"Total: ${order.total:.2f}",
     ]
@@ -111,6 +129,7 @@ def send_order_confirmation_email(order):
         body="\n".join(lines),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[order.email],
+        bcc=[settings.REPLY_TO_EMAIL],
         reply_to=[settings.REPLY_TO_EMAIL],
     )
     message.send(fail_silently=True)
@@ -122,7 +141,9 @@ def mark_order_paid(order, session):
     it to StripePaymentLog) idempotently -- safe to call from both the
     webhook and the confirmation-page fallback check.
     """
+    from django.db.models import F
     from django.utils import timezone
+    from cart.models import PromoCode
     from stripe_app.models import StripePaymentLog
 
     already_paid = order.status == order.STATUS_PAID
@@ -132,6 +153,8 @@ def mark_order_paid(order, session):
         order.stripe_payment_intent = getattr(session, "payment_intent", None) or order.stripe_payment_intent
         order.paid_at = timezone.now()
         order.save(update_fields=["status", "stripe_payment_intent", "paid_at"])
+        if order.promo_code_id:
+            PromoCode.objects.filter(pk=order.promo_code_id).update(times_used=F("times_used") + 1)
 
     StripePaymentLog.objects.update_or_create(
         stripe_session_id=session.id,

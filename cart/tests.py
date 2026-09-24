@@ -1,10 +1,14 @@
+from datetime import timedelta
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 
 from products.models import Product, ProductVariant
 from stores.models import Store
 
-from .models import Cart, CartItem
+from .models import Cart, CartItem, PromoCode
 
 User = get_user_model()
 
@@ -150,3 +154,72 @@ class GetOrCreateCartUtilTests(TestCase):
         self.client.get(f"/cart/{self.store.slug}/")
         self.client.get(f"/cart/{other_store.slug}/")
         self.assertEqual(Cart.objects.filter(user=customer, checked_out=False).count(), 2)
+
+
+class PromoCodeTests(TestCase):
+    def setUp(self):
+        owner = User.objects.create_user(email="promoowner@example.com", password="testpass123")
+        self.store = Store.objects.create(
+            owner=owner, display_name="Promo Store", is_storefront_enabled=True)
+        product = Product.objects.create(store=self.store, name="Crawler Comp Kit")
+        self.variant = ProductVariant.objects.create(product=product, sku="PC-001", price="59.99")
+        self.promo = PromoCode.objects.create(code="testcode", discount_percent=Decimal("25"))
+
+    def _cart_with_item(self, quantity=2):
+        self.client.post(
+            f"/cart/{self.store.slug}/add/",
+            {"variant_uuid": str(self.variant.uuid), "quantity": quantity},
+        )
+        return Cart.objects.get(store=self.store, checked_out=False)
+
+    def test_discount_rounds_to_cents(self):
+        # 25% of 119.98 = 29.995 -> 30.00
+        self.assertEqual(self.promo.discount_for(Decimal("119.98")), Decimal("30.00"))
+
+    def test_apply_code_is_case_insensitive_and_discounts_cart(self):
+        cart = self._cart_with_item()
+        self.client.post(f"/cart/{self.store.slug}/promo/apply/", {"promo_code": "  TESTCODE "})
+        cart.refresh_from_db()
+        self.assertEqual(cart.promo_code, self.promo)
+        self.assertEqual(cart.discount_amount, Decimal("30.00"))
+        self.assertEqual(cart.total, Decimal("89.98"))
+
+    def test_unknown_code_is_not_applied(self):
+        cart = self._cart_with_item()
+        self.client.post(f"/cart/{self.store.slug}/promo/apply/", {"promo_code": "nope"})
+        cart.refresh_from_db()
+        self.assertIsNone(cart.promo_code)
+
+    def test_inactive_expired_and_used_up_codes_rejected(self):
+        cases = [
+            {"is_active": False},
+            {"expires_at": timezone.now() - timedelta(days=1)},
+            {"max_uses": 1, "times_used": 1},
+        ]
+        for i, fields in enumerate(cases):
+            promo = PromoCode.objects.create(code=f"bad{i}", discount_percent=Decimal("10"), **fields)
+            self.assertIsNotNone(promo.invalid_reason(self.store), fields)
+
+    def test_store_scoped_code_rejected_at_other_store(self):
+        other_owner = User.objects.create_user(email="otherpromo@example.com", password="testpass123")
+        other_store = Store.objects.create(owner=other_owner, display_name="Other Promo Store")
+        scoped = PromoCode.objects.create(code="scoped", discount_percent=Decimal("10"), store=other_store)
+        self.assertIsNotNone(scoped.invalid_reason(self.store))
+        self.assertIsNone(scoped.invalid_reason(other_store))
+
+    def test_code_deactivated_after_apply_is_dropped_on_cart_view(self):
+        cart = self._cart_with_item()
+        self.client.post(f"/cart/{self.store.slug}/promo/apply/", {"promo_code": "testcode"})
+        self.promo.is_active = False
+        self.promo.save()
+        self.client.get(f"/cart/{self.store.slug}/")
+        cart.refresh_from_db()
+        self.assertIsNone(cart.promo_code)
+
+    def test_remove_promo_code(self):
+        cart = self._cart_with_item()
+        self.client.post(f"/cart/{self.store.slug}/promo/apply/", {"promo_code": "testcode"})
+        self.client.post(f"/cart/{self.store.slug}/promo/remove/")
+        cart.refresh_from_db()
+        self.assertIsNone(cart.promo_code)
+        self.assertEqual(cart.total, cart.subtotal)

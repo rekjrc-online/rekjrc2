@@ -24,3 +24,18 @@ def get_or_create_cart(request, store):
         checked_out=False,
     )
     return cart
+
+
+def revalidate_cart_promo(cart):
+    """
+    Drops the cart's promo code if it has stopped being valid since it was
+    applied (deactivated, expired, hit max_uses). Returns the shopper-facing
+    reason if one was dropped, else None.
+    """
+    if not cart.promo_code:
+        return None
+    reason = cart.promo_code.invalid_reason(cart.store)
+    if reason:
+        cart.promo_code = None
+        cart.save(update_fields=["promo_code"])
+    return reason

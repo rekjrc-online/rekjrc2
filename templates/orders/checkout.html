@@ -15,6 +15,14 @@
     <tr>
       <td align="right" colspan="2"><strong>Subtotal: ${{ cart.subtotal }}</strong></td>
     </tr>
+    {% if cart.promo_code %}
+      <tr>
+        <td align="right" colspan="2">Promo code {{ cart.promo_code.code }}: -${{ cart.discount_amount }}</td>
+      </tr>
+      <tr>
+        <td align="right" colspan="2"><strong>Total: ${{ cart.total }}</strong></td>
+      </tr>
+    {% endif %}
     <tr>
       <td colspan="2">Shipping will be confirmed by RekjRC<br />before your order ships.</td>
     </tr>

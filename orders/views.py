@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
-from cart.utils import get_or_create_cart
+from cart.utils import get_or_create_cart, revalidate_cart_promo
 from stores.models import Store
 
 from .models import Order, OrderItem
@@ -18,6 +18,11 @@ def checkout(request, store_slug):
 
     if not store.can_accept_payments:
         messages.error(request, f"{store.display_name} isn't able to accept payments yet -- try again later.")
+        return redirect("cart:detail", store_slug)
+
+    reason = revalidate_cart_promo(cart)
+    if reason:
+        messages.error(request, f"{reason} It's been removed from your cart.")
         return redirect("cart:detail", store_slug)
 
     if request.method == "POST":
@@ -51,8 +56,12 @@ def checkout(request, store_slug):
             )
 
         order.subtotal = sum((i.line_total for i in order.items.all()), Decimal("0.00"))
-        order.total = order.subtotal + order.shipping_cost
-        order.save(update_fields=["subtotal", "total"])
+        if cart.promo_code:
+            order.promo_code = cart.promo_code
+            order.promo_code_text = cart.promo_code.code
+            order.discount_amount = cart.promo_code.discount_for(order.subtotal)
+        order.total = order.subtotal - order.discount_amount + order.shipping_cost
+        order.save(update_fields=["subtotal", "promo_code", "promo_code_text", "discount_amount", "total"])
 
         # Import here (not at module top) to avoid a hard import-time
         # dependency on stripe_app / the stripe package from every request

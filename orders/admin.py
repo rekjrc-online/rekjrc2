@@ -13,13 +13,16 @@ class OrderItemInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
-        "uuid", "store", "email", "status", "subtotal", "shipping_cost",
-        "total", "paid_at", "created_at",
+        "uuid", "store", "email", "status", "subtotal", "promo_code_text", "discount_amount",
+        "shipping_cost", "total", "paid_at", "created_at",
     )
     list_filter = ("status", "store")
-    search_fields = ("email", "uuid", "store__display_name", "stripe_checkout_session_id", "stripe_payment_intent")
+    search_fields = (
+        "email", "uuid", "store__display_name", "promo_code_text",
+        "stripe_checkout_session_id", "stripe_payment_intent",
+    )
     readonly_fields = (
-        "store", "user", "email", "subtotal", "total",
+        "store", "user", "email", "subtotal", "promo_code", "promo_code_text", "discount_amount", "total",
         "stripe_checkout_session_id", "stripe_payment_intent", "paid_at", "created_at", "updated_at",
     )
     ordering = ("-created_at",)

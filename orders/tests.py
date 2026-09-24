@@ -47,6 +47,22 @@ class OrderTotalsTests(TestCase):
         self.assertEqual(order.subtotal, Decimal("218.98"))  # 99.00 + 2 * 59.99
         self.assertEqual(order.total, Decimal("228.98"))
 
+    def test_recalculate_totals_subtracts_discount(self):
+        owner = User.objects.create_user(email="owner7@example.com", password="testpass123")
+        store = Store.objects.create(owner=owner, display_name="Discount Store")
+        product = Product.objects.create(store=store, name="Universal Keypad")
+        variant = ProductVariant.objects.create(product=product, sku="UK-300", price="100.00")
+        order = Order.objects.create(
+            store=store, email="jason@example.com",
+            shipping_cost=Decimal("5.00"), discount_amount=Decimal("25.00"))
+        OrderItem.objects.create(
+            order=order, variant=variant, product_name=product.name,
+            unit_price=variant.price, quantity=1,
+        )
+        order.recalculate_totals()
+        self.assertEqual(order.subtotal, Decimal("100.00"))
+        self.assertEqual(order.total, Decimal("80.00"))
+
     def test_recalculate_totals_with_no_items_is_just_shipping(self):
         owner = User.objects.create_user(email="owner3@example.com", password="testpass123")
         store = Store.objects.create(owner=owner, display_name="Empty Order Store")
