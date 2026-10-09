@@ -1,8 +1,13 @@
+import codecs
+import csv
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.utils import timezone
+from django.views.generic import View, ListView, CreateView, UpdateView, DeleteView
 
 from stores.models import Store
 
@@ -70,6 +75,40 @@ class ManageList(ProductManageMixin, ListView):
         # manage_list.html lists each product's variants (with price)
         # inline, so prefetch them here to avoid an N+1 query per product.
         return super().get_queryset().prefetch_related("variants")
+
+
+class ManageDownload(ProductManageMixin, View):
+    """
+    CSV export of the store's full product list -- one row per variant,
+    product columns repeated; a product with no variants still gets one row
+    (variant columns blank). Includes inactive products/variants, same as
+    manage_list.html. Built fresh from the DB on every request, never
+    written to disk.
+    """
+
+    def get(self, request, *args, **kwargs):
+        stamp = timezone.localtime().strftime("%Y%m%d-%H%M%S")
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{self.store.slug}-products-{stamp}.csv"'
+        response["Cache-Control"] = "no-store"
+        # Leading BOM so Excel opens it as UTF-8 instead of guessing.
+        response.write(codecs.BOM_UTF8)
+
+        writer = csv.writer(response)
+        writer.writerow(["Product", "Product Slug", "Product Active", "Variant", "SKU", "Price", "Variant Active"])
+        for product in self.get_queryset().prefetch_related("variants"):
+            product_cols = [product.name, product.slug, "Yes" if product.is_active else "No"]
+            variants = product.variants.all()
+            if not variants:
+                writer.writerow(product_cols + ["", "", "", ""])
+            for variant in variants:
+                writer.writerow(product_cols + [
+                    variant.name,
+                    variant.sku,
+                    variant.price,
+                    "Yes" if variant.is_active else "No",
+                ])
+        return response
 
 
 class ManageCreate(ProductManageMixin, CreateView):

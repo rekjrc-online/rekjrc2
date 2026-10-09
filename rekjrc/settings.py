@@ -68,6 +68,18 @@ TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', default='1x000000000000000000
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
+# Requires a beat process: `celery -A rekjrc beat`
+CELERY_BEAT_SCHEDULE = {
+    'dispatch-device-webhooks': {
+        'task': 'devices.tasks.dispatch_webhooks',
+        'schedule': 10.0,
+    },
+    'prune-webhook-deliveries': {
+        'task': 'devices.tasks.prune_webhook_deliveries',
+        'schedule': 86400.0,
+    },
+}
+
 # ------------------------------
 # Installed Apps
 # ------------------------------

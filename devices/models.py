@@ -1,4 +1,7 @@
+import secrets
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -28,6 +31,14 @@ class Device(BaseModel):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='claimed_devices')
+
+    # Billing gate for outgoing webhooks. Staff-only (admin); default off.
+    webhook_enabled  = models.BooleanField(default=False, db_index=True)
+    webhook_endpoint = models.ForeignKey(
+        'WebhookEndpoint',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='devices')
 
     class Meta:
         indexes = [
@@ -120,3 +131,76 @@ class DevicePayload(models.Model):
         self.error       = message
         self.retry_count += 1
         self.save(update_fields=['error', 'retry_count'])
+
+
+def _new_webhook_secret():
+    return secrets.token_hex(32)
+
+
+class WebhookEndpoint(BaseModel):
+    """
+    A customer's outgoing-webhook destination. Owned by an account (User), not
+    by a Team/Club/Location. Devices opt in via Device.webhook_endpoint (many
+    devices -> one endpoint) and Device.webhook_enabled (staff billing gate).
+    """
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='webhook_endpoints')
+    name = models.CharField(max_length=100, blank=True)
+    url = models.URLField(max_length=500, help_text="Must be https://")
+    secret = models.CharField(
+        max_length=64, default=_new_webhook_secret,
+        help_text="Signs each request (HMAC-SHA256). Share with the customer.")
+    is_active = models.BooleanField(default=True)
+
+    consecutive_failures = models.PositiveIntegerField(default=0)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    last_failure_at = models.DateTimeField(null=True, blank=True)
+    disabled_reason = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['account_id', 'name']
+
+    def __str__(self):
+        return f"{self.name or self.url} ({self.account})"
+
+    def clean(self):
+        if self.url and not self.url.lower().startswith('https://'):
+            raise ValidationError({'url': 'Webhook URL must start with https://'})
+
+
+class WebhookDelivery(models.Model):
+    """One (payload, endpoint) delivery, with attempt history."""
+    PENDING, SUCCESS, FAILED, SKIPPED = 'pending', 'success', 'failed', 'skipped'
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'), (SUCCESS, 'Success'),
+        (FAILED, 'Failed'), (SKIPPED, 'Skipped'),
+    ]
+
+    payload = models.ForeignKey(
+        DevicePayload, on_delete=models.CASCADE, related_name='webhook_deliveries')
+    endpoint = models.ForeignKey(
+        WebhookEndpoint, on_delete=models.CASCADE, related_name='deliveries')
+    status = models.CharField(
+        max_length=8, choices=STATUS_CHOICES, default=PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    error = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    next_attempt_at = models.DateTimeField(default=timezone.now)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['payload', 'endpoint'], name='uniq_webhook_delivery'),
+        ]
+        indexes = [
+            models.Index(fields=['status', 'next_attempt_at']),
+            models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self):
+        return f"payload {self.payload_id} -> endpoint {self.endpoint_id} [{self.status}]"

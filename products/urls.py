@@ -9,6 +9,7 @@ urlpatterns = [
     # they take priority over the public store_slug/slug routes below --
     # note this means a store slugged literally "manage" isn't supported.
     path("manage/<slug:store_slug>/create/", views.ManageCreate.as_view(), name="manage_create"),
+    path("manage/<slug:store_slug>/download/", views.ManageDownload.as_view(), name="manage_download"),
     path("manage/<slug:store_slug>/<slug:slug>/edit/", views.ManageUpdate.as_view(), name="manage_edit"),
     path("manage/<slug:store_slug>/<slug:slug>/delete/", views.ManageDelete.as_view(), name="manage_delete"),
 
