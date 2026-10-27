@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.urls import reverse
 
 from stores.models import Store
 
@@ -91,3 +92,49 @@ class ProductVariantPriceTests(TestCase):
         product.is_active = False
         product.save()
         self.assertFalse(product.in_stock)
+
+
+class ManagePricesTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(email="owner@example.com", password="testpass123")
+        self.store = Store.objects.create(owner=self.owner, display_name="RekjRC Device Store")
+        product = Product.objects.create(store=self.store, name="Price Kit")
+        self.variant = ProductVariant.objects.create(product=product, sku="PK-001", price="10.00")
+        self.url = reverse("products:manage_price_update", args=[self.store.slug, self.variant.uuid])
+
+    def test_page_lists_variant_for_owner(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("products:manage_prices", args=[self.store.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.url)
+
+    def test_owner_can_update_price(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self.url, {"price": "$12.5"})
+        self.assertEqual(response.json(), {"ok": True, "price": "12.50"})
+        self.variant.refresh_from_db()
+        self.assertEqual(self.variant.price, Decimal("12.50"))
+
+    def test_invalid_prices_rejected(self):
+        self.client.force_login(self.owner)
+        for bad in ["", "abc", "-1", "1.234", "NaN", "1000000"]:
+            response = self.client.post(self.url, {"price": bad})
+            self.assertEqual(response.status_code, 400, bad)
+        self.variant.refresh_from_db()
+        self.assertEqual(self.variant.price, Decimal("10.00"))
+
+    def test_non_owner_cannot_update_price(self):
+        other = User.objects.create_user(email="other@example.com", password="testpass123")
+        self.client.force_login(other)
+        response = self.client.post(self.url, {"price": "1.00"})
+        self.assertEqual(response.status_code, 403)
+        self.variant.refresh_from_db()
+        self.assertEqual(self.variant.price, Decimal("10.00"))
+
+    def test_variant_from_other_store_404s(self):
+        other = User.objects.create_user(email="other@example.com", password="testpass123")
+        other_store = Store.objects.create(owner=other, display_name="Other Store")
+        self.client.force_login(other)
+        url = reverse("products:manage_price_update", args=[other_store.slug, self.variant.uuid])
+        response = self.client.post(url, {"price": "1.00"})
+        self.assertEqual(response.status_code, 404)

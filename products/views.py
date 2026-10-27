@@ -1,9 +1,10 @@
 import codecs
 import csv
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -109,6 +110,49 @@ class ManageDownload(ProductManageMixin, View):
                     "Yes" if variant.is_active else "No",
                 ])
         return response
+
+
+class ManagePrices(ProductManageMixin, ListView):
+    """
+    Dedicated bulk-pricing page: every variant of every product in the
+    store, each with an always-editable price box. No submit button --
+    static/prices.js POSTs each box to ManagePriceUpdate below on change.
+    Includes inactive products/variants, same as manage_list.html.
+    """
+    model = Product
+    template_name = "products/manage_prices.html"
+    context_object_name = "products"
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("variants")
+
+
+class ManagePriceUpdate(ProductManageMixin, View):
+    """
+    AJAX endpoint for manage_prices.html: sets a single variant's price.
+    POST only, field "price". Returns JSON {"ok": true, "price": "12.34"}
+    or {"ok": false, "error": "..."} with a 400. Placed orders snapshot
+    unit_price (see orders/views.py), so this never alters past orders;
+    open carts pick up the new price since CartItem reads variant.price live.
+    """
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        variant = get_object_or_404(ProductVariant, uuid=kwargs["variant_uuid"], product__store=self.store)
+        raw = request.POST.get("price", "").strip().lstrip("$").replace(",", "")
+        try:
+            price = Decimal(raw)
+        except InvalidOperation:
+            return JsonResponse({"ok": False, "error": "Not a number."}, status=400)
+        if not price.is_finite() or price < 0:
+            return JsonResponse({"ok": False, "error": "Must be 0 or more."}, status=400)
+        if price != price.quantize(Decimal("0.01")):
+            return JsonResponse({"ok": False, "error": "Max 2 decimal places."}, status=400)
+        if price >= Decimal("1000000"):
+            return JsonResponse({"ok": False, "error": "Too large."}, status=400)
+        variant.price = price.quantize(Decimal("0.01"))
+        variant.save(update_fields=["price", "updated_at"])
+        return JsonResponse({"ok": True, "price": str(variant.price)})
 
 
 class ManageCreate(ProductManageMixin, CreateView):

@@ -10,6 +10,8 @@ urlpatterns = [
     # note this means a store slugged literally "manage" isn't supported.
     path("manage/<slug:store_slug>/create/", views.ManageCreate.as_view(), name="manage_create"),
     path("manage/<slug:store_slug>/download/", views.ManageDownload.as_view(), name="manage_download"),
+    path("manage/<slug:store_slug>/prices/", views.ManagePrices.as_view(), name="manage_prices"),
+    path("manage/<slug:store_slug>/prices/<uuid:variant_uuid>/", views.ManagePriceUpdate.as_view(), name="manage_price_update"),
     path("manage/<slug:store_slug>/<slug:slug>/edit/", views.ManageUpdate.as_view(), name="manage_edit"),
     path("manage/<slug:store_slug>/<slug:slug>/delete/", views.ManageDelete.as_view(), name="manage_delete"),
 
