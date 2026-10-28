@@ -4,8 +4,8 @@
 
 <div class="panel" style="text-align: center">
   <h3>Manage Products - {{ store.display_name }}</h3>
-  <a href="{% url 'products:manage_create' store.slug %}" class="button">Add Product</a>
-  <a href="{% url 'products:manage_prices' store.slug %}" class="button">Prices</a>
+  <a href="{% url 'products:manage_create' store.slug %}" class="button">Add Product</a> |
+  <a href="{% url 'products:manage_prices' store.slug %}" class="button">Prices</a> |
   <a href="{% url 'products:manage_download' store.slug %}" class="button">Download</a>
   {% if not products %}
     <br />- No products yet -<br />
