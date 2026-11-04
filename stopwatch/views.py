@@ -65,9 +65,23 @@ class Finish_(LoginRequiredMixin, View):
         if race.race_finished==True:
             return HttpResponseForbidden("Race is already finished.")
         runs = StopwatchRun.objects.filter(race=race).select_related('racedriver', 'racedriver__driver', 'racedriver__build')
-        if not runs.exists():
-            return HttpResponseForbidden("No runs found.")
-        sorted_runs = runs.order_by('elapsed_time')
+        timed_runs = runs.filter(elapsed_time__isnull=False)
+        if not timed_runs.exists():
+            # Still let the race be closed out. Rally races fed by devices
+            # through the gateway record their results as device payloads,
+            # not StopwatchRun rows -- refusing here left those races
+            # unfinished forever, and the Go /racedrivers/ lookup
+            # (race_finished = false) kept serving their driver lists to
+            # devices long after the event was over.
+            Post.objects.create(
+                author_content_type=ContentType.objects.get_for_model(Race),
+                author_object_id=race.id,
+                content=f"{race} - Race Finished\r\n\r\nNo stopwatch times recorded.\r\n")
+            race.race_finished = True
+            race.entry_locked = True
+            race.save()
+            return redirect('races:start', uuid=race_uuid)
+        sorted_runs = timed_runs.order_by('elapsed_time')
         fastest_time = sorted_runs.first().elapsed_time
         winners = [run for run in sorted_runs if run.elapsed_time == fastest_time]
         if len(winners) == 1:

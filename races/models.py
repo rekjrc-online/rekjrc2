@@ -183,7 +183,6 @@ class RaceDriver(BaseModel):
     def __str__(self):
         return f"Driver: {self.driver or '-driver-'} - Build: {self.build or '-build-'}"
 
-
 class RaceJudgeDevice(BaseModel):
     """
     Maps a device to a specific judge for a judged race.
