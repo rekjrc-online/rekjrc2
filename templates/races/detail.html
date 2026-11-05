@@ -57,6 +57,8 @@
           <hr />
           Owner functions:
           <a href="edit" class="button">Edit</a>,
+          <a href="{% url 'races:classes' object.uuid %}" class="button">Classes</a>,
+          <a href="{% url 'races:flyer' object.uuid %}" class="button" target="_blank" rel="noopener">Flyer</a>,
           <a href="delete" class="button button-danger">Delete</a>
         </td>
       </tr>
@@ -95,7 +97,7 @@
     {% for racedriver in racedrivers %}
       <li>
         {% if racedriver.transponder %}#{{ racedriver.transponder }} - {% endif %}
-        {{ racedriver.driver }} ({{ racedriver.build }})
+        {{ racedriver.driver }} ({{ racedriver.build }}){% if racedriver.race_class %} - {{ racedriver.race_class }}{% endif %}
       </li>
     {% empty %}
       <li>No drivers have joined yet</li>

@@ -142,10 +142,41 @@ class Race(BaseModel, Ownable):
             Q(owner=user) | Q(judge_team__members__user=user)
         )
 
+class RaceClass(BaseModel):
+    """
+    A class (e.g. "Stock", "Modified", "Pro") within a race. A race has zero
+    or more of these. When a race has at least one, drivers joining it must
+    pick one (see races.views.Join_); when it has none, RaceDriver.race_class
+    stays NULL and joining works exactly as before.
+    """
+    race = models.ForeignKey(
+        Race,
+        on_delete=models.CASCADE,
+        related_name='race_classes')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'race class'
+        verbose_name_plural = 'race classes'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['race', 'name'],
+                name='unique_race_class_name')]
+
+    def __str__(self):
+        return self.name
+
 class RaceDriver(BaseModel):
     race = models.ForeignKey(
         Race,
         on_delete=models.CASCADE,
+        related_name='race_drivers')
+    race_class = models.ForeignKey(
+        RaceClass,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='race_drivers')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/classes.html -->
+
+<div class="panel" style="text-align: center;">
+    <h3>Classes: <a href="{% url 'races:detail' race.uuid %}">{{ race }}</a></h3>
+</div>
+
+<div class="panel">
+    <h4>Current Classes</h4>
+    {% if race_classes %}
+        <table width="100%" cellpadding="5">
+            <tbody>
+                {% for race_class in race_classes %}
+                    <tr>
+                        <td width="100%">
+                            <form method="post" style="display: flex; gap: 6px; align-items: center;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="rename">
+                                <input type="hidden" name="class_uuid" value="{{ race_class.uuid }}">
+                                <input type="text" name="name" value="{{ race_class.name }}" maxlength="100" required style="flex: 1;">
+                                <small style="white-space: nowrap;">{{ race_class.entry_count }} entr{{ race_class.entry_count|pluralize:"y,ies" }}</small>
+                                <button type="submit" class="button">Save</button>
+                            </form>
+                        </td>
+                        <td>
+                            <form method="post"
+                                  onsubmit="return confirm('Delete class &quot;{{ race_class.name|escapejs }}&quot;?{% if race_class.entry_count %}\n\n{{ race_class.entry_count }} entr{{ race_class.entry_count|pluralize:"y,ies" }} will stay in the race but lose their class.{% endif %}');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="class_uuid" value="{{ race_class.uuid }}">
+                                <button type="submit" class="button button-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p><em>No classes. Drivers can join without picking one.</em></p>
+    {% endif %}
+</div>
+
+<div class="panel">
+    <h4>Add Class</h4>
+    <form method="post" style="display: flex; gap: 6px; align-items: center;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <input type="text" name="name" maxlength="100" placeholder="e.g. Stock, Modified, Pro" required style="flex: 1;">
+        <button type="submit" class="button">Add</button>
+    </form>
+    <p><small>Once a race has at least one class, drivers must pick a class when they join.</small></p>
+</div>
+
+<br /><br /><br />
+
+{% endblock %}

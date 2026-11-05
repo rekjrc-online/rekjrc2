@@ -1,4 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,7 +12,7 @@ from crud.views import CrudContextMixin, CrudAuthMixin, PublicDetailMixin
 from drivers.models import Driver
 from races.models import Race
 from .forms import RaceForm, RaceJudgeDeviceForm
-from .models import Race, RaceDriver, RaceJudgeDevice
+from .models import Race, RaceClass, RaceDriver, RaceJudgeDevice
 
 class Start_(View):
     def get(self, request, *args, **kwargs):
@@ -66,7 +69,7 @@ class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         race = self.object
-        context['racedrivers'] = RaceDriver.objects.filter(race=race).select_related('driver')
+        context['racedrivers'] = RaceDriver.objects.filter(race=race).select_related('driver', 'race_class')
         return context
 
 class Create_(CrudAuthMixin, CrudContextMixin, CreateView):
@@ -104,18 +107,21 @@ class Delete_(CrudAuthMixin, CrudContextMixin, DeleteView):
 class Join_(LoginRequiredMixin, View):
     template_name = "races/join.html"
 
+    def _render(self, request, race, error=None):
+        context = {
+            "race": race,
+            "drivers": Driver.objects.filter(owner=request.user),
+            "builds": Build.objects.filter(owner=request.user),
+            "race_classes": race.race_classes.all(),
+            "error": error,
+        }
+        return render(request, self.template_name, context)
+
     def get(self, request, uuid):
         race = get_object_or_404(Race, uuid=uuid)
         if race.entry_locked==True:
             return render(request, "races/full.html", {'uuid': uuid})
-        drivers = Driver.objects.filter(owner=request.user)
-        builds = Build.objects.filter(owner=request.user)
-        context = {
-            "race": race,
-            "drivers": drivers,
-            "builds": builds,
-        }
-        return render(request, self.template_name, context)
+        return self._render(request, race)
 
     def post(self, request, uuid):
         # NOT Race.for_user(request.user) -- that's owner/judge-scoped and
@@ -131,8 +137,20 @@ class Join_(LoginRequiredMixin, View):
         driver_uuid = request.POST.get("driver_uuid")
         build_uuid = request.POST.get("build_uuid")
         transponder = request.POST.get("transponder")
+        race_class_uuid = request.POST.get("race_class_uuid")
         driver = Driver.objects.filter(uuid=driver_uuid, owner=request.user).first() if driver_uuid else None
         build = Build.objects.filter(uuid=build_uuid, owner=request.user).first() if build_uuid else None
+        # Class is required only when this race defines at least one. Scoped
+        # to race.race_classes so a class UUID from a different race can't be
+        # submitted.
+        race_class = None
+        if race.race_classes.exists():
+            try:
+                race_class = race.race_classes.filter(uuid=race_class_uuid).first() if race_class_uuid else None
+            except ValidationError:
+                race_class = None
+            if race_class is None:
+                return self._render(request, race, error="Please select a class.")
         existing = RaceDriver.objects.filter(race=race, user=request.user, driver=driver, build=build).exists()
         if not existing:
             RaceDriver.objects.create(
@@ -140,6 +158,7 @@ class Join_(LoginRequiredMixin, View):
                 user=request.user,
                 driver=driver,
                 build=build,
+                race_class=race_class,
                 transponder=transponder)
         return redirect("races:detail", uuid=uuid)
 
@@ -178,6 +197,115 @@ class JudgeDeviceAdd_(LoginRequiredMixin, View):
             assignment.race = race
             assignment.save()
         return redirect('races:judge-device-add', uuid=uuid)
+
+
+class Flyer_(LoginRequiredMixin, View):
+    """
+    Owner-only printable flyer. Deliberately standalone plain HTML (does not
+    extend base.html) so there's no site chrome/JS to fight with when
+    printing. The QR code is rendered inline as a vector SVG (same join URL
+    Race.save() encodes into the PNG) so it prints sharp at any size and
+    doesn't depend on the media file existing.
+    """
+    template_name = "races/flyer.html"
+
+    def get(self, request, uuid):
+        import datetime
+        import qrcode
+        import qrcode.image.svg
+        from django.utils.safestring import mark_safe
+
+        race = get_object_or_404(
+            Race.objects.select_related('event', 'location', 'track__location', 'judge_team', 'owner'),
+            uuid=uuid, owner=request.user)
+
+        join_url = f"https://www.rekjrc.com/races/{race.uuid}/join"
+        qr = qrcode.QRCode(
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=2,
+            image_factory=qrcode.image.svg.SvgPathImage)
+        qr.add_data(join_url)
+        qr.make(fit=True)
+        qr_svg = qr.make_image().to_string(encoding='unicode')
+
+        event = race.event
+        event_end_date = None
+        if event and event.event_days and event.event_days > 1:
+            event_end_date = event.event_date + datetime.timedelta(days=event.event_days - 1)
+
+        # Race's own location wins; otherwise fall back to the track's.
+        location = race.location or (race.track.location if race.track else None)
+
+        return render(request, self.template_name, {
+            'race': race,
+            'event': event,
+            'event_end_date': event_end_date,
+            'location': location,
+            'race_classes': race.race_classes.all(),
+            'join_url': join_url,
+            'qr_svg': mark_safe(qr_svg),
+        })
+
+
+class RaceClasses_(LoginRequiredMixin, View):
+    """
+    Owner-only page to add / rename / delete a race's classes. Everything
+    posts back to this one URL with an "action" field (add|rename|delete),
+    then redirects here (post/redirect/get) with a flash message.
+    """
+    template_name = "races/classes.html"
+
+    def _get_race(self, request, uuid):
+        return get_object_or_404(Race, uuid=uuid, owner=request.user)
+
+    def get(self, request, uuid):
+        race = self._get_race(request, uuid)
+        race_classes = race.race_classes.annotate(entry_count=Count('race_drivers'))
+        return render(request, self.template_name, {
+            'race': race,
+            'race_classes': race_classes,
+        })
+
+    def post(self, request, uuid):
+        race = self._get_race(request, uuid)
+        action = request.POST.get('action')
+        name = (request.POST.get('name') or '').strip()[:100]
+
+        if action in ('rename', 'delete'):
+            try:
+                race_class = race.race_classes.filter(uuid=request.POST.get('class_uuid')).first()
+            except ValidationError:
+                race_class = None
+            if race_class is None:
+                messages.error(request, "Class not found.")
+                return redirect('races:classes', uuid=uuid)
+
+        if action in ('add', 'rename'):
+            if not name:
+                messages.error(request, "Class name can't be blank.")
+                return redirect('races:classes', uuid=uuid)
+            dupes = race.race_classes.filter(name__iexact=name)
+            if action == 'rename':
+                dupes = dupes.exclude(pk=race_class.pk)
+            if dupes.exists():
+                messages.error(request, f'This race already has a class named "{name}".')
+                return redirect('races:classes', uuid=uuid)
+
+        if action == 'add':
+            RaceClass.objects.create(race=race, name=name)
+            messages.success(request, f'Added class "{name}".')
+        elif action == 'rename':
+            old_name = race_class.name
+            race_class.name = name
+            race_class.save(update_fields=['name', 'updated_at'])
+            messages.success(request, f'Renamed "{old_name}" to "{name}".')
+        elif action == 'delete':
+            # RaceDriver.race_class is SET_NULL, so entries in this class
+            # stay in the race, just without a class.
+            race_class.delete()
+            messages.success(request, f'Deleted class "{race_class.name}".')
+        return redirect('races:classes', uuid=uuid)
 
 
 class JudgeDeviceRemove_(LoginRequiredMixin, View):

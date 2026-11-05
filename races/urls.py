@@ -12,6 +12,8 @@ urlpatterns = [
     path("<uuid:uuid>/join/", views.Join_.as_view(), name="join"),
     path("<uuid:uuid>/start/", views.Start_.as_view(), name="start"),
     path("<uuid:uuid>/lock/", views.Lock_.as_view(), name="lock"),
-    path("<uuid:uuid>/judge-devices/", views.JudgeDeviceAdd_.as_view(), name="judge-device-add"),
+    path("<uuid:uuid>/flyer/", views.Flyer_.as_view(), name="flyer"),
+    path("<uuid:uuid>/classes/",views.RaceClasses_.as_view(), name="classes"),
+    path("<uuid:uuid>/judge-devices/",views.JudgeDeviceAdd_.as_view(), name="judge-device-add"),
     path("<uuid:uuid>/judge-devices/<int:assignment_id>/remove/", views.JudgeDeviceRemove_.as_view(), name="judge-device-remove"),
 ]
