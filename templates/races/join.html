@@ -12,6 +12,15 @@
 {% endif %}
 <form method="post">
     {% csrf_token %}
+    {% if race_classes %}
+        <p><strong>Select your class:</strong></p>
+        <select name="race_class_uuid" required>
+            <option value="">-- Select a class --</option>
+            {% for race_class in race_classes %}
+                <option value="{{ race_class.uuid }}"{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} selected{% endif %}>{{ race_class.name }}</option>
+            {% endfor %}
+        </select>
+    {% endif %}
     <p><strong>Select your driver:</strong></p>
     <table>
         <tbody>
@@ -65,16 +74,6 @@
             {% endif %}
         </tbody>
     </table>
-
-    {% if race_classes %}
-        <p><strong>Select your class:</strong></p>
-        <select name="race_class_uuid" required>
-            <option value="">-- Select a class --</option>
-            {% for race_class in race_classes %}
-                <option value="{{ race_class.uuid }}"{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} selected{% endif %}>{{ race_class.name }}</option>
-            {% endfor %}
-        </select>
-    {% endif %}
 
     {% if race.transponder %}
         <p><strong>Transponder Number:</strong></p>
