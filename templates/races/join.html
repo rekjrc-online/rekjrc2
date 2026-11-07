@@ -20,6 +20,7 @@
                 <option value="{{ race_class.uuid }}"{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} selected{% endif %}>{{ race_class.name }}</option>
             {% endfor %}
         </select>
+        <br />
     {% endif %}
     <p><strong>Select your driver:</strong></p>
     <table>
