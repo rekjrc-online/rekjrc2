@@ -151,7 +151,9 @@ class Join_(LoginRequiredMixin, View):
                 race_class = None
             if race_class is None:
                 return self._render(request, race, error="Please select a class.")
-        existing = RaceDriver.objects.filter(race=race, user=request.user, driver=driver, build=build).exists()
+        # race_class is part of the dedupe key: the same driver+build may enter
+        # the same race once per class (matches unique_race_driver_build).
+        existing = RaceDriver.objects.filter(race=race, user=request.user, driver=driver, build=build, race_class=race_class).exists()
         if not existing:
             RaceDriver.objects.create(
                 race=race,
