@@ -110,8 +110,8 @@ class Join_(LoginRequiredMixin, View):
     def _render(self, request, race, error=None):
         context = {
             "race": race,
-            "drivers": Driver.objects.filter(owner=request.user),
-            "builds": Build.objects.filter(owner=request.user),
+            "drivers": Driver.objects.filter(owner=request.user, is_active=True),
+            "builds": Build.objects.filter(owner=request.user, is_active=True),
             "race_classes": race.race_classes.all(),
             "error": error,
         }
@@ -138,8 +138,10 @@ class Join_(LoginRequiredMixin, View):
         build_uuid = request.POST.get("build_uuid")
         transponder = request.POST.get("transponder")
         race_class_uuid = request.POST.get("race_class_uuid")
-        driver = Driver.objects.filter(uuid=driver_uuid, owner=request.user).first() if driver_uuid else None
-        build = Build.objects.filter(uuid=build_uuid, owner=request.user).first() if build_uuid else None
+        # is_active=True mirrors the dropdowns in _render(), so a deactivated
+        # driver/build can't be entered via a hand-crafted POST either.
+        driver = Driver.objects.filter(uuid=driver_uuid, owner=request.user, is_active=True).first() if driver_uuid else None
+        build = Build.objects.filter(uuid=build_uuid, owner=request.user, is_active=True).first() if build_uuid else None
         # Class is required only when this race defines at least one. Scoped
         # to race.race_classes so a class UUID from a different race can't be
         # submitted.
