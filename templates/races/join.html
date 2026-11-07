@@ -14,13 +14,20 @@
     {% csrf_token %}
     {% if race_classes %}
         <p><strong>Select your class:</strong></p>
-        <select name="race_class_uuid" required>
-            <option value="">-- Select a class --</option>
-            {% for race_class in race_classes %}
-                <option value="{{ race_class.uuid }}"{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} selected{% endif %}>{{ race_class.name }}</option>
-            {% endfor %}
-        </select>
-        <br />
+        <table>
+            <tbody>
+                {% for race_class in race_classes %}
+                    <tr>
+                        <td style="padding-right:10px; padding-bottom:20px;">
+                            <input type="radio" name="race_class_uuid" id="race_class_{{ race_class.uuid }}" value="{{ race_class.uuid }}" required{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} checked{% endif %}>
+                        </td>
+                        <td width="100%" style="padding-bottom:20px;">
+                            <label for="race_class_{{ race_class.uuid }}">{{ race_class.name }}</label>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% endif %}
     <p><strong>Select your driver:</strong></p>
     <table>
