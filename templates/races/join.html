@@ -12,30 +12,14 @@
 {% endif %}
 <form method="post">
     {% csrf_token %}
-    {% if race_classes %}
-        <p><strong>Select your class:</strong></p>
-        <table>
-            <tbody>
-                {% for race_class in race_classes %}
-                    <tr>
-                        <td style="padding-right:10px; padding-bottom:20px;">
-                            <input type="radio" name="race_class_uuid" id="race_class_{{ race_class.uuid }}" value="{{ race_class.uuid }}" required{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} checked{% endif %}>
-                        </td>
-                        <td width="100%" style="padding-bottom:20px;">
-                            <label for="race_class_{{ race_class.uuid }}">{{ race_class.name }}</label>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
     <p><strong>Select your driver:</strong></p>
     <table>
         <tbody>
             {% if drivers %}
                 {% for profile in drivers %}
                     <tr>
-                        <td style="padding-right:10px; padding-bottom:20px;">
+                        <td style="padding-right:10px; padding-bottom:20px;" nowrap>
+                            &nbsp;&nbsp;&nbsp;
                             <input type="radio" name="driver_uuid" value="{{ profile.uuid }}" required>
                         </td>
                         <td style="padding-right:10px;">
@@ -62,7 +46,8 @@
             {% if builds %}
                 {% for profile in builds %}
                     <tr>
-                        <td style="padding-right:10px; padding-bottom:20px;">
+                        <td style="padding-right:10px; padding-bottom:20px;" nowrap>
+                            &nbsp;&nbsp;&nbsp;
                             <input type="radio" name="build_uuid" value="{{ profile.uuid }}" required>
                         </td>
                         <td style="padding-right:10px;">
@@ -82,6 +67,25 @@
             {% endif %}
         </tbody>
     </table>
+
+    {% if race_classes %}
+        <p><strong>Select your class:</strong></p>
+        <table>
+            <tbody>
+                {% for race_class in race_classes %}
+                    <tr>
+                        <td style="padding-right:10px; padding-bottom:20px;" nowrap>
+                            &nbsp;&nbsp;&nbsp;
+                            <input type="radio" name="race_class_uuid" id="race_class_{{ race_class.uuid }}" value="{{ race_class.uuid }}" required{% if request.POST.race_class_uuid == race_class.uuid|stringformat:"s" %} checked{% endif %}>
+                        </td>
+                        <td width="100%" style="padding-bottom:20px;">
+                            <label for="race_class_{{ race_class.uuid }}">{{ race_class.name }}</label>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
     {% if race.transponder %}
         <p><strong>Transponder Number:</strong></p>
