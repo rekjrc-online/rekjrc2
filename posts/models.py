@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 from rekjrc.base_models import BaseModel
 import re
 
@@ -88,9 +89,21 @@ HTML_TAG_REGEX = re.compile(r'<[^>]+>')
 def strip_html(text):
     return HTML_TAG_REGEX.sub('', text)
 
-URL_REGEX = re.compile(r'(https?://[^\s]+)', re.IGNORECASE)
+# display_content is rendered with |safe, so everything that goes into it must
+# be HTML-escaped here. URLs stop at quotes/angle brackets so they can't break
+# out of the href attribute, and both the URL and the surrounding text are
+# escaped -- strip_html() alone isn't enough (e.g. an unclosed "<img ..." tag
+# survives its regex).
+URL_REGEX = re.compile(r'https?://[^\s<>"\'`]+', re.IGNORECASE)
 def make_clickable_urls(text):
-    def repl(match):
-        url = match.group(0)
-        return f'<a href="{url}" target="_blank" onclick="event.stopPropagation();" rel="noopener noreferrer">{url}</a>'
-    return URL_REGEX.sub(repl, text)
+    parts = []
+    last = 0
+    for match in URL_REGEX.finditer(text):
+        parts.append(escape(text[last:match.start()]))
+        url = escape(match.group(0))
+        parts.append(
+            f'<a href="{url}" target="_blank" onclick="event.stopPropagation();" '
+            f'rel="noopener noreferrer">{url}</a>')
+        last = match.end()
+    parts.append(escape(text[last:]))
+    return "".join(parts)

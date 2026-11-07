@@ -34,7 +34,7 @@ class SigningTests(SimpleTestCase):
 class PostTests(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="shop", password="pw")
+        self.user = User.objects.create_user(email="shop@example.com", password="pw")
         self.device = Device.objects.create(mac="AA:BB:CC:DD:EE:01", name="Beam 1")
         self.endpoint = WebhookEndpoint.objects.create(
             account=self.user, url="https://shop.example.com/hook", secret="topsecret")
@@ -91,7 +91,7 @@ class PostTests(TestCase):
 class DeliveryRetryTests(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="shop", password="pw")
+        self.user = User.objects.create_user(email="shop@example.com", password="pw")
         self.endpoint = WebhookEndpoint.objects.create(
             account=self.user, url="https://shop.example.com/hook")
         self.device = Device.objects.create(
@@ -183,7 +183,7 @@ class DeliveryRetryTests(TestCase):
 class DispatchTests(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username="shop", password="pw")
+        self.user = User.objects.create_user(email="shop@example.com", password="pw")
         self.endpoint = WebhookEndpoint.objects.create(
             account=self.user, url="https://shop.example.com/hook")
 

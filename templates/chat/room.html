@@ -125,16 +125,23 @@ function renderMessage(m) {
     div.classList.add("msg");
     div.classList.add(m.is_you ? "you" : "them");
 
-    div.innerHTML = `
-        <div class="msg-header">
-            <strong>${m.username}</strong>
-            <span>· ${new Date(m.created_at).toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit'
-            })}</span>
-        </div>
-        <div>${m.message}</div>
-    `;
+    // Built with textContent, never innerHTML: username and message are
+    // user-supplied, so interpolating them as HTML was a stored XSS.
+    const header = document.createElement("div");
+    header.className = "msg-header";
+    const name = document.createElement("strong");
+    name.textContent = m.username;
+    const time = document.createElement("span");
+    time.textContent = " · " + new Date(m.created_at).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+    header.append(name, time);
+
+    const body = document.createElement("div");
+    body.textContent = m.message;
+
+    div.append(header, body);
     return div;
 }
 

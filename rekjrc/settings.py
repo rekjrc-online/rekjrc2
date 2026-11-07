@@ -112,7 +112,6 @@ INSTALLED_APPS = [
     'django_extensions',
     'phonenumber_field',
     'widget_tweaks',
-    "rest_framework",
     # Ownable apps
     "devices",
     "builds",
@@ -287,15 +286,6 @@ CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
     "http://127.0.0.1",
     "http://localhost",
 ])
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
 
 LOGGING = {
     "version": 1,

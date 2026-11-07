@@ -58,19 +58,6 @@ urlpatterns = [
     path('stopwatch/', include(('stopwatch.urls', 'stopwatch'), namespace='stopwatch')),
     path('swiss/', include(('swiss.urls', 'swiss'), namespace='swiss')),
     path('topspeed/', include(('topspeed.urls', 'topspeed'), namespace='topspeed')),
-
-    path("api/accounts/", include(("accounts.api.urls","accounts_api"), namespace="accounts_api")),
-    path("api/devices/", include(("devices.api.urls","devices_api"), namespace="devices_api")),
-    path("api/builds/", include(("builds.api.urls","builds_api"), namespace="builds_api")),
-    path("api/clubs/", include(("clubs.api.urls","clubs_api"), namespace="clubs_api")),
-    path("api/drivers/", include(("drivers.api.urls","drivers_api"), namespace="drivers_api")),
-    path("api/events/", include(("events.api.urls","events_api"), namespace="events_api")),
-    path("api/locations/", include(("locations.api.urls","locations_api"), namespace="locations_api")),
-    path("api/posts/", include(("posts.api.urls","posts_api"), namespace="posts_api")),
-    path("api/races/", include(("races.api.urls","races_api"), namespace="races_api")),
-    path("api/stores/", include(("stores.api.urls","stores_api"), namespace="stores_api")),
-    path("api/teams/", include(("teams.api.urls","teams_api"), namespace="teams_api")),
-    path("api/tracks/", include(("tracks.api.urls","tracks_api"), namespace="tracks_api"))
 ]
 
 handler404 = 'rekjrc.urls.custom_404'

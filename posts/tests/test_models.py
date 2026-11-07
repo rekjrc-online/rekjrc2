@@ -37,6 +37,21 @@ class PostModelTests(TestCase):
         self.assertEqual(post.content, "Hello https://example.com")
         self.assertIn('<a href="https://example.com"', post.display_content)
 
+    def test_unclosed_tag_is_escaped_not_rendered(self):
+        post = self.create_post(content="hi <img src=x onerror=alert(1)")
+        self.assertNotIn("<img", post.display_content)
+        self.assertIn("&lt;img", post.display_content)
+
+    def test_url_cannot_break_out_of_href(self):
+        result = make_clickable_urls('https://x.com"onmouseover="alert(1)')
+        self.assertIn('<a href="https://x.com"', result)
+        self.assertNotIn('"onmouseover="', result)
+        self.assertIn("&quot;onmouseover=&quot;", result)
+
+    def test_url_query_ampersand_is_escaped(self):
+        result = make_clickable_urls("https://x.com/?a=1&b=2")
+        self.assertIn('href="https://x.com/?a=1&amp;b=2"', result)
+
     def test_posted_date_delta_just_now(self):
         post = self.create_post(content="Test post")
         self.assertEqual(post.posted_date_delta, "just now")
