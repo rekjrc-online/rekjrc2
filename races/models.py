@@ -212,7 +212,7 @@ class RaceDriver(BaseModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['race', 'driver', 'build'],
+                fields=['race', 'driver', 'build', 'race_class'],
                 name='unique_race_driver_build')]
 
     def __str__(self):
