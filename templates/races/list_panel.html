@@ -27,6 +27,20 @@
                 {% if race.race_finished %}
                     <p><strong>Race Finished</strong></p>
                 {% endif %}
+                {% for res in race.my_results %}
+                    <p>
+                        <strong>{{ res.racedriver.driver|default:"-driver-" }}</strong>
+                        | {{ res.racedriver.build|default:"-build-" }}
+                        {% if res.class_name %} | {{ res.class_name }}{% endif %}
+                        {% if res.position %}<br />Place: #{{ res.position }}{% endif %}
+                        {% if res.best %}<br />Best: {{ res.best }}{% endif %}
+                        {% if res.runs %}
+                            <br /><span class="muted">Runs ({{ res.runs|length }}): {{ res.runs|join:", " }}</span>
+                        {% elif not res.position %}
+                            <br /><span class="muted">No results yet</span>
+                        {% endif %}
+                    </p>
+                {% endfor %}
             </td>
         </tr>
     </table>

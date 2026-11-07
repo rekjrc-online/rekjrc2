@@ -44,6 +44,66 @@ class Start_(View):
                 print("Unknown race_type=", race.race_type)
                 return redirect("races:detail", uuid=race.uuid)
 
+def _sections_for(race_type):
+    """The run-based race type's sections(race) function, or None."""
+    # Imported lazily: these service modules import races.results, which
+    # imports races.models -- keep races.views free of import-order surprises.
+    match race_type:
+        case "Stopwatch Race" | "Rally":
+            from stopwatch.services import sections
+        case "Top Speed":
+            from topspeed.services import sections
+        case "Long Jump":
+            from longjump.services import sections
+        case "Crawler Comp":
+            from crawler.services import sections
+        case "Judged Event":
+            from judged.services import sections
+        case _:
+            return None
+    return sections
+
+
+def _is_mine(racedriver, user):
+    return racedriver.user_id == user.id or (
+        racedriver.driver is not None and racedriver.driver.owner_id == user.id)
+
+
+def my_race_results(race, user):
+    """
+    One dict per entry `user` has in `race` (registered by them, or for a
+    Driver they own): driver/build/class, place within class, best result,
+    and every run newest first. Run-based race types reuse each type's own
+    sections() ranking; other types fall back to RaceDriver.finish_position.
+    """
+    sections = _sections_for(race.race_type)
+    if sections is not None:
+        return [
+            {
+                'racedriver': row.racedriver,
+                'class_name': section.title,
+                'position': row.position,
+                'best': row.best_display,
+                'runs': row.run_displays,
+            }
+            for section in sections(race)
+            for row in section.rows
+            if _is_mine(row.racedriver, user)
+        ]
+    entries = (RaceDriver.objects.filter(race=race)
+               .select_related('driver', 'build', 'race_class').order_by('id'))
+    return [
+        {
+            'racedriver': rd,
+            'class_name': rd.race_class.name if rd.race_class else "",
+            'position': rd.finish_position,
+            'best': "",
+            'runs': (),
+        }
+        for rd in entries if _is_mine(rd, user)
+    ]
+
+
 class List_(LoginRequiredMixin, View):
     template_name = "races/list.html"
 
@@ -55,12 +115,14 @@ class List_(LoginRequiredMixin, View):
             is_active=True
         ).distinct()
         # Races I'm entered in: a RaceDriver registered by me, or for a
-        # Driver I own. Races I own are already listed above, so skip them.
-        driver_races = Race.objects.filter(
+        # Driver I own. Includes races I own too (they also appear above),
+        # and finished races, so this doubles as a consolidated results list.
+        driver_races = list(Race.objects.filter(
             Q(race_drivers__user=request.user) | Q(race_drivers__driver__owner=request.user),
-            race_finished=False,
             is_active=True
-        ).exclude(owner=request.user).distinct()
+        ).distinct().order_by('race_finished', '-created_at'))
+        for race in driver_races:
+            race.my_results = my_race_results(race, request.user)
 
         return render(request, self.template_name, {
             'races': races,
