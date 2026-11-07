@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -54,10 +54,18 @@ class List_(LoginRequiredMixin, View):
             race_finished=False,
             is_active=True
         ).distinct()
+        # Races I'm entered in: a RaceDriver registered by me, or for a
+        # Driver I own. Races I own are already listed above, so skip them.
+        driver_races = Race.objects.filter(
+            Q(race_drivers__user=request.user) | Q(race_drivers__driver__owner=request.user),
+            race_finished=False,
+            is_active=True
+        ).exclude(owner=request.user).distinct()
 
         return render(request, self.template_name, {
             'races': races,
             'judge_races': judge_races,
+            'driver_races': driver_races,
         })
 
 class Detail_(PublicDetailMixin, CrudContextMixin, DetailView):
