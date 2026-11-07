@@ -1,0 +1,51 @@
+<!-- races/_entry_sections.html
+     Shared Start-page standings table for the run-based race types.
+     Context:
+       sections         -- races.results.entry_sections() (one per RaceClass)
+       action_template  -- per-race-type partial rendering the Action cell
+                           links; receives `d` (the RaceDriver) and `row`
+       result_label     -- header for the best-result column ("Top Speed")
+     Each row's `row.best_display` / `row.run_displays` are set by the view
+     (Metric.display), so this partial stays race-type agnostic. -->
+{% for section in sections %}
+    {% if section.race_class or sections|length > 1 %}
+        <h4 style="margin: 1rem 0 0.25rem 0;">{{ section.title|default:"No class" }}</h4>
+    {% endif %}
+    <table style="width:100%; text-align:center;" cellpadding="2" cellspacing="2">
+        <tr>
+            {% if not race.race_finished %}
+                <th>Action</th>
+            {% endif %}
+            <th>#</th>
+            <th>Driver</th>
+            <th>Model</th>
+            <th>{{ result_label }}</th>
+            <th>Runs</th>
+        </tr>
+        {% for row in section.rows %}
+            {% with d=row.racedriver %}
+            <tr>
+                {% if not race.race_finished %}
+                    <td>{% include action_template %}</td>
+                {% endif %}
+                <td>{{ row.position|default:"--" }}</td>
+                <td>{{ d.driver }}</td>
+                <td>{{ d.build }}</td>
+                <td>{{ row.best_display|default:"--" }}</td>
+                <td>
+                    {% if row.run_displays %}
+                        <details>
+                            <summary>{{ row.run_displays|length }}</summary>
+                            {% for r in row.run_displays %}{{ r }}<br />{% endfor %}
+                        </details>
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr><td colspan="6">No drivers signed up yet.</td></tr>
+        {% endfor %}
+    </table>
+{% endfor %}

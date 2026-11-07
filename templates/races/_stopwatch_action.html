@@ -1,0 +1,3 @@
+<a href="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}?mode=run">{% if row.attempts %}Re-run{% else %}Run{% endif %}</a>
+|
+<a href="{% url 'stopwatch:race' race_uuid=race.uuid racedriver_uuid=d.uuid %}?mode=enter">Enter</a>

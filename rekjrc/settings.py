@@ -78,7 +78,22 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'devices.tasks.prune_webhook_deliveries',
         'schedule': 86400.0,
     },
+    'process-device-payloads': {
+        'task': 'races.tasks.process_device_payloads',
+        'schedule': 5.0,
+    },
 }
+
+# Device results (races/device_results.py): turns handheld results that the
+# Go ingest service stored in devices_devicepayload into race runs.
+#   DEVICE_RESULTS_ENABLED -- master switch (off by default).
+#   DEVICE_RESULTS_SINCE   -- ISO datetime, e.g. "2026-11-07T12:00:00-05:00".
+#                             Only payloads created at/after this are imported,
+#                             so the backlog from before the feature existed is
+#                             never pulled into races. Required: nothing is
+#                             processed while it's unset.
+DEVICE_RESULTS_ENABLED = env.bool('DEVICE_RESULTS_ENABLED', default=False)
+DEVICE_RESULTS_SINCE = env('DEVICE_RESULTS_SINCE', default='')
 
 # ------------------------------
 # Installed Apps

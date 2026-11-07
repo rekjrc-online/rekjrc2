@@ -84,14 +84,42 @@ class DeviceWhitelistAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
+class PayloadErrorFilter(admin.SimpleListFilter):
+    title = "error"
+    parameter_name = "has_error"
+
+    def lookups(self, request, model_admin):
+        return (("yes", "Has error"), ("no", "No error"))
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.exclude(error="")
+        if self.value() == "no":
+            return queryset.filter(error="")
+        return queryset
+
+
 @admin.register(DevicePayload)
 class DevicePayloadAdmin(admin.ModelAdmin):
     list_display = (
         "device", "created_at", "racedriver_id", "value",
-        "name", "processed", "processed_at", "retry_count",
+        "name", "processed", "processed_at", "retry_count", "error",
     )
-    list_filter = ("processed", "device")
+    list_filter = ("processed", PayloadErrorFilter, "name", "device")
     search_fields = ("device__name", "device__mac", "value", "name")
     ordering = ("created_at",)
     readonly_fields = ("created_at", "processed_at")
     list_select_related = ("device",)
+    actions = ("reprocess",)
+
+    @admin.action(description="Reprocess selected (race results)")
+    def reprocess(self, request, queryset):
+        # Only rejected/failed rows: re-running a successfully recorded
+        # result would record it a second time (every run is kept).
+        n = (queryset.exclude(error="")
+             .update(processed=False, processed_at=None, error="", retry_count=0))
+        skipped = queryset.count() - n
+        self.message_user(
+            request,
+            f"{n} payload(s) queued for reprocessing."
+            + (f" {skipped} skipped (no error -- already recorded or still pending)." if skipped else ""))

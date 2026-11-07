@@ -1,0 +1,1 @@
+{% if race.is_judge %}<a href="{% url 'judged:judge' race_uuid=race.uuid racedriver_id=d.id %}">Score run {{ row.next_run }}</a>{% else %}--{% endif %}

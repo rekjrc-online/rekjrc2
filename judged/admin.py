@@ -4,7 +4,7 @@ from .models import JudgedScore
 
 @admin.register(JudgedScore)
 class JudgedScoreAdmin(admin.ModelAdmin):
-    list_display = ("race", "racedriver", "judge", "score")
+    list_display = ("race", "racedriver", "run_number", "judge", "score")
     search_fields = (
         "race__id",
         "racedriver__driver__display_name",

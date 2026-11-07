@@ -138,9 +138,13 @@ class Race(BaseModel, Ownable):
     @classmethod
     def for_user(cls, user):
         from django.db.models import Q
+        # distinct(): the judge_team__members join yields one row per team
+        # member, so without it the owner of a race with 2+ judges got
+        # duplicate rows and get_object_or_404() raised
+        # MultipleObjectsReturned.
         return cls.objects.filter(
             Q(owner=user) | Q(judge_team__members__user=user)
-        )
+        ).distinct()
 
 class RaceClass(BaseModel):
     """

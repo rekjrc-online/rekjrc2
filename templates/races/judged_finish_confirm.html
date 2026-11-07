@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- races/judged_finish_confirm.html -->
+
+<div class="panel">
+    <center><h3>{{ race }}</h3></center>
+
+    <p>These runs haven't been scored by every judge yet. They won't count toward the standings if you finish now:</p>
+
+    <ul>
+        {% for racedriver, run in incomplete %}
+            <li>{{ racedriver.driver }} ({{ racedriver.build }}){% if racedriver.race_class %} - {{ racedriver.race_class }}{% endif %}: run {{ run.run_number }}, {{ run.scored }}/{{ run.judges }} judges</li>
+        {% endfor %}
+    </ul>
+
+    <form method="post" action="{% url 'judged:finish' race_uuid=race.uuid %}">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="1" />
+        <button type="submit" class="btn btn-primary">Finish Race Anyway</button>
+    </form>
+    <br />
+    <a href="{% url 'judged:start' race_uuid=race.uuid %}">Back to scoring</a>
+</div>
+{% endblock %}
