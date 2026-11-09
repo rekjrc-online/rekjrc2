@@ -24,7 +24,7 @@ urlpatterns = [
     path('chat/', include(('chat_app.urls', 'chat_app'), namespace='chat')),
 
     path('u/', include(('urls_app.urls', 'urls_app'), namespace='urls_app')),
-    # path('sponsors/', include(('sponsors.urls', 'sponsors'), namespace='sponsors')),
+    path('sponsors/', include(('sponsors.urls', 'sponsors'), namespace='sponsors')),
     # path('support/', include(('support.urls', 'support'), namespace='support')),
 
     # Public storefront directory (all stores with an enabled, live

@@ -202,7 +202,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 #"rekjrc.context.device_type",
-                #"sponsors.context_processors.sponsors_context",
+                "sponsors.context_processors.sponsors_context",
             ],
         },
     },

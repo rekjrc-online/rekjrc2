@@ -5,7 +5,7 @@
     <div class="d-flex flex-column gap-3">
         {% for sponsor in sponsors_list %}
             <div class="card">
-                <a href="{{ sponsor.website }}?source=rekjrc" target="_blank" onclick="recordSponsorClick('{{ sponsor.id }}', '{{ sponsor.website }}'); return false;">
+                <a href="{{ sponsor.website }}?source=rekjrc" target="_blank" rel="noopener" onclick="recordSponsorClick('{{ sponsor.id }}');">
                     <img src="{{ sponsor.image.url }}" class="card-img-top img-fluid rounded" alt="{{ sponsor.name }}">
                 </a>
             </div>

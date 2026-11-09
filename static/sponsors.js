@@ -29,18 +29,16 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
-function recordSponsorClick(sponsorId, url) {
+// Fire-and-forget click log. The <a target="_blank"> opens the sponsor site
+// itself, synchronously, so popup blockers don't eat it the way a
+// window.open() after an awaited fetch would. keepalive lets the request
+// finish even if the page navigates.
+function recordSponsorClick(sponsorId) {
     fetch(`/sponsors/${sponsorId}/click/`, {
         method: 'POST',
+        keepalive: true,
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCookie('csrftoken') || '',
         },
-    })
-    .then(() => {
-        window.open(url, '_blank');
-    })
-    .catch(err => {
-        console.error('Error logging click:', err);
-        window.open(url, '_blank'); // still open even if logging fails
-    });
+    }).catch(err => console.error('Error logging sponsor click:', err));
 }
